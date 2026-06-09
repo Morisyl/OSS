@@ -1,0 +1,173 @@
+/* ============================================================
+   OSS DESIGN TOKENS
+   All colours, spacing, radii, shadows defined once here.
+   Import this before globals.css.
+   Components use these variables — never hardcode values.
+   ============================================================ */
+
+:root {
+  /* ── Typography ─────────────────────────────────────────── */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --text-xs:   0.75rem;   /* 12px */
+  --text-sm:   0.875rem;  /* 14px */
+  --text-base: 1rem;      /* 16px */
+  --text-lg:   1.125rem;  /* 18px */
+  --text-xl:   1.25rem;   /* 20px */
+  --text-2xl:  1.5rem;    /* 24px */
+
+  --weight-normal:  400;
+  --weight-medium:  500;
+  --weight-semibold: 600;
+
+  /* ── Spacing ─────────────────────────────────────────────── */
+  --space-1:  0.25rem;   /* 4px  */
+  --space-2:  0.5rem;    /* 8px  */
+  --space-3:  0.75rem;   /* 12px */
+  --space-4:  1rem;      /* 16px */
+  --space-5:  1.25rem;   /* 20px */
+  --space-6:  1.5rem;    /* 24px */
+  --space-8:  2rem;      /* 32px */
+  --space-10: 2.5rem;    /* 40px */
+  --space-12: 3rem;      /* 48px */
+
+  /* ── Border Radius ───────────────────────────────────────── */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* ── Layout ──────────────────────────────────────────────── */
+  --sidebar-width:  240px;
+  --topbar-height:  56px;
+
+  /* ── Shadows ─────────────────────────────────────────────── */
+  --shadow-card:    0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-modal:   0 20px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.10);
+  --shadow-dropdown:0 4px 16px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08);
+
+  /* ── Transitions ─────────────────────────────────────────── */
+  --transition-fast:   100ms ease;
+  --transition-base:   150ms ease;
+  --transition-slow:   250ms ease;
+
+  /* ── Light Mode Colours ──────────────────────────────────── */
+
+  /* Backgrounds */
+  --color-bg:             #f4f4f0;
+  --color-surface:        #ffffff;
+  --color-surface-raised: #fafaf8;
+  --color-surface-overlay:#ffffff;
+
+  /* Borders */
+  --color-border:         #e2e1db;
+  --color-border-strong:  #c8c7c0;
+
+  /* Text */
+  --color-text-primary:   #1a1a18;
+  --color-text-secondary: #52524e;
+  --color-text-muted:     #8a8a84;
+  --color-text-inverse:   #ffffff;
+
+  /* Brand — deep slate-teal */
+  --color-brand:          #1e6b5e;
+  --color-brand-hover:    #17574c;
+  --color-brand-subtle:   #e3f0ee;
+  --color-brand-text:     #ffffff;
+
+  /* Danger */
+  --color-danger:         #c0392b;
+  --color-danger-subtle:  #fdf0ef;
+  --color-danger-text:    #ffffff;
+
+  /* Status — payment */
+  --color-status-unpaid:       #e67e22;
+  --color-status-unpaid-bg:    #fef3e8;
+  --color-status-unpaid-text:  #7d3f00;
+
+  --color-status-partial:      #d4ac0d;
+  --color-status-partial-bg:   #fefbe8;
+  --color-status-partial-text: #6b5000;
+
+  --color-status-paid:         #1e8449;
+  --color-status-paid-bg:      #eafaf1;
+  --color-status-paid-text:    #0b4023;
+
+  /* Status — progress */
+  --color-status-pending:      #7f8c8d;
+  --color-status-pending-bg:   #f2f3f3;
+  --color-status-pending-text: #2c3e50;
+
+  --color-status-complete:     #1e6b5e;
+  --color-status-complete-bg:  #e3f0ee;
+  --color-status-complete-text:#0d3530;
+
+  /* Status — task */
+  --color-status-done:         #1e8449;
+  --color-status-done-bg:      #eafaf1;
+  --color-status-done-text:    #0b4023;
+}
+
+/* ── Dark Mode ───────────────────────────────────────────── */
+.dark {
+  /* Backgrounds */
+  --color-bg:             #111110;
+  --color-surface:        #1c1c1a;
+  --color-surface-raised: #232321;
+  --color-surface-overlay:#282826;
+
+  /* Borders */
+  --color-border:         #2e2e2b;
+  --color-border-strong:  #454541;
+
+  /* Text */
+  --color-text-primary:   #eeeee8;
+  --color-text-secondary: #a8a8a0;
+  --color-text-muted:     #666660;
+  --color-text-inverse:   #111110;
+
+  /* Brand */
+  --color-brand:          #2d9c8c;
+  --color-brand-hover:    #38b5a3;
+  --color-brand-subtle:   #1a2e2c;
+  --color-brand-text:     #ffffff;
+
+  /* Danger */
+  --color-danger:         #e74c3c;
+  --color-danger-subtle:  #2a1a18;
+  --color-danger-text:    #ffffff;
+
+  /* Status — payment */
+  --color-status-unpaid:       #e67e22;
+  --color-status-unpaid-bg:    #2a1e0e;
+  --color-status-unpaid-text:  #f0a868;
+
+  --color-status-partial:      #d4ac0d;
+  --color-status-partial-bg:   #261e08;
+  --color-status-partial-text: #e8cc68;
+
+  --color-status-paid:         #2ecc71;
+  --color-status-paid-bg:      #0e2018;
+  --color-status-paid-text:    #7de8a8;
+
+  /* Status — progress */
+  --color-status-pending:      #7f8c8d;
+  --color-status-pending-bg:   #1e1e1e;
+  --color-status-pending-text: #b0b8b8;
+
+  --color-status-complete:     #2d9c8c;
+  --color-status-complete-bg:  #0e2220;
+  --color-status-complete-text:#7dd4cc;
+
+  /* Status — task */
+  --color-status-done:         #2ecc71;
+  --color-status-done-bg:      #0e2018;
+  --color-status-done-text:    #7de8a8;
+
+  /* Shadows */
+  --shadow-card:    0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-modal:   0 20px 60px rgba(0,0,0,0.5), 0 4px 16px rgba(0,0,0,0.3);
+  --shadow-dropdown:0 4px 16px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.2);
+}
