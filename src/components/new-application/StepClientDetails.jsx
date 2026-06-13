@@ -1,72 +1,97 @@
 import { useEffect } from 'react';
 import { useClients } from '../../hooks/useClients';
 import { Input } from '../common/Input';
+import { Button } from '../common/Button';
 
-export const StepClientDetails = ({ data, updateData }) => {
-  const { lookupClientId, loading } = useClients();
-
-  // Debounced ID lookup
-  useEffect(() => {
-    const checkId = async () => {
-      if (data.clientId && data.clientId.trim().length > 0) {
-        const client = await lookupClientId(data.clientId.trim());
-        if (client) {
-          // FIX: Updated to client.phone_number to match the database schema
-          // Added || '' to absolutely prevent the uncontrolled input error
-          updateData({ 
-            clientName: client.name || '', 
-            phone: client.phone_number || '', 
-            isNewClient: false 
-          });
-        } else {
-          // Clear pre-fills if not found, mark as new
-          updateData({ isNewClient: true });
-        }
-      } else {
-        updateData({ isNewClient: null });
-      }
-    };
-    
-    const timeoutId = setTimeout(checkId, 500);
-    return () => clearTimeout(timeoutId);
-  }, [data.clientId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const helperMessage = loading 
-    ? "Searching for existing Client ID..." 
-    : data.isNewClient === false 
-      ? "✅ Existing client found." 
-      : data.isNewClient === true 
-        ? "✨ New client will be created." 
-        : "";
+const ClientRow = ({ client, index, onChange, onLookup }) => {
+  const helperMessage = client.isNewClient === false
+    ? "✅ Existing client found."
+    : client.isNewClient === true
+      ? "✨ New client will be created."
+      : "";
 
   return (
-    <div className="space-y-6 animate-scale-in">
+    <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl space-y-3">
+      <div className="text-xs font-bold uppercase tracking-widest text-gray-400">Client {index + 1}</div>
       <Input
-        label="Client ID"
-        placeholder="Enter Client ID"
-        value={data.clientId}
-        onChange={(e) => updateData({ clientId: e.target.value })}
+        label="Client ID / Passport No."
+        placeholder="Enter ID"
+        value={client.clientId}
+        onChange={(e) => onChange(index, 'clientId', e.target.value)}
         helperText={helperMessage}
       />
-      
-      <div className="flex gap-4">
+      <div className="flex gap-3">
         <Input
-          label="Client Name"
-          placeholder="Enter full name"
-          value={data.clientName}
-          onChange={(e) => updateData({ clientName: e.target.value })}
-          disabled={data.isNewClient === false}
+          label="Name"
+          placeholder="Full name"
+          value={client.clientName}
+          onChange={(e) => onChange(index, 'clientName', e.target.value)}
+          disabled={client.isNewClient === false}
           className="flex-1"
         />
         <Input
-          label="Phone Number"
-          placeholder="e.g. 0712345678"
-          value={data.phone}
-          onChange={(e) => updateData({ phone: e.target.value })}
-          disabled={data.isNewClient === false}
+          label="Phone No."
+          placeholder="0712345678"
+          value={client.phone}
+          onChange={(e) => onChange(index, 'phone', e.target.value)}
+          disabled={client.isNewClient === false}
           className="flex-1"
         />
       </div>
+    </div>
+  );
+};
+
+export const StepClientDetails = ({ data, updateData }) => {
+  const { lookupClientId } = useClients();
+
+  const handleChange = (index, field, value) => {
+    const updated = data.clients.map((c, i) =>
+      i === index ? { ...c, [field]: value } : c
+    );
+    updateData({ clients: updated });
+  };
+
+  // Debounced lookup per row
+  useEffect(() => {
+    const timers = data.clients.map((client, index) => {
+      return setTimeout(async () => {
+        if (client.clientId?.trim().length > 0) {
+          const found = await lookupClientId(client.clientId.trim());
+          const updated = data.clients.map((c, i) =>
+            i === index
+              ? found
+                ? { ...c, clientName: found.name || '', phone: found.phone_number || '', isNewClient: false }
+                : { ...c, isNewClient: true }
+              : c
+          );
+          updateData({ clients: updated });
+        }
+      }, 500);
+    });
+    return () => timers.forEach(clearTimeout);
+  }, [data.clients.map(c => c.clientId).join(',')]); // eslint-disable-line
+
+  const addRow = () => {
+    updateData({
+      clients: [...data.clients, { clientId: '', clientName: '', phone: '', isNewClient: null }]
+    });
+  };
+
+  return (
+    <div className="space-y-4 animate-scale-in">
+      {data.clients.map((client, index) => (
+        <ClientRow
+          key={index}
+          client={client}
+          index={index}
+          onChange={handleChange}
+          onLookup={() => {}}
+        />
+      ))}
+      <Button variant="secondary" onClick={addRow} className="w-full">
+        + Add Client
+      </Button>
     </div>
   );
 };

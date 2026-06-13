@@ -4,6 +4,39 @@ import { createService, deleteService } from '../../services/services.service';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 import { Spinner } from '../common/Spinner';
+import { supabase } from '../../lib/supabase';
+
+
+const ServiceRow = ({ service, onDelete, onRename }) => {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(service.name);
+
+  return (
+    <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl gap-3">
+      {editing ? (
+        <input
+          autoFocus
+          className="flex-1 bg-white dark:bg-gray-900 px-3 py-1 rounded-xl font-medium outline-none ring-2 ring-black dark:ring-white"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onBlur={async () => {
+            if (name.trim() && name !== service.name) await onRename(service.id, name.trim());
+            setEditing(false);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.target.blur();
+            if (e.key === 'Escape') { setName(service.name); setEditing(false); }
+          }}
+        />
+      ) : (
+        <span className="flex-1 font-medium text-black dark:text-white">{service.name}</span>
+      )}
+      <Button variant="secondary" onClick={() => setEditing(true)} className="px-4 py-1.5 text-sm">Edit</Button>
+      <Button variant="danger" onClick={() => onDelete(service.id)} className="px-4 py-1.5 text-sm">Delete</Button>
+    </div>
+  );
+};
+
 
 export const ServiceManager = () => {
   const { services, loading, error, refetchServices } = useServices();
@@ -43,16 +76,21 @@ export const ServiceManager = () => {
   if (error) return <div className="text-red-500">{error}</div>;
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-4xl p-8 shadow-xl border border-gray-100 dark:border-gray-800">
-      <h2 className="text-2xl font-bold mb-6 uppercase tracking-tight">Services Catalogue</h2>
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-4xl font-black tracking-tight text-black dark:text-white">Services</h2>
+        <Button onClick={() => document.getElementById('new-service-input')?.focus()}>Add Service</Button>
+      </div>
+      <hr className="border-gray-200 dark:border-gray-700 mb-6" />
       
       {actionError && <div className="mb-6 p-3 bg-red-50 text-red-600 rounded-xl text-sm font-medium">{actionError}</div>}
 
-      <form onSubmit={handleAddService} className="flex gap-4 mb-8 items-end">
+      // UPDATE the form to remove the label and sit below the divider:
+      <form onSubmit={handleAddService} className="flex gap-4 mb-6 items-center">
         <div className="flex-1">
-          <Input 
-            label="Add New Service"
-            placeholder="e.g. Logo Design, ETIMS Registration..." 
+          <Input
+            id="new-service-input"
+            placeholder="e.g. Logo Design, ETIMS Registration..."
             value={newServiceName}
             onChange={(e) => setNewServiceName(e.target.value)}
           />
@@ -67,12 +105,15 @@ export const ServiceManager = () => {
           <p className="text-gray-500 italic">No services created yet.</p>
         ) : (
           services.map(service => (
-            <div key={service.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl">
-              <span className="font-medium text-black dark:text-white">{service.name}</span>
-              <Button variant="danger" onClick={() => handleDelete(service.id)} className="px-4 py-1.5 text-sm">
-                Delete
-              </Button>
-            </div>
+            <ServiceRow
+              key={service.id}
+              service={service}
+              onDelete={handleDelete}
+              onRename={async (id, newName) => {
+                await supabase.from('services').update({ name: newName }).eq('id', id);
+                await refetchServices();
+              }}
+            />
           ))
         )}
       </div>

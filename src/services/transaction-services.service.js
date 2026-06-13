@@ -5,9 +5,11 @@ export const getTasksByTransaction = async (transactionId) => {
     .from('transaction_services')
     .select(`
       *,
-      services (*)
+      services (*),
+      is_additional
     `)
     .eq('transaction_id', transactionId)
+    .order('is_additional', { ascending: true })
     .order('created_at', { ascending: true });
 
   if (error) throw error;

@@ -25,7 +25,7 @@ export const searchClients = async (query) => {
 export const createClient = async (clientData) => {
   const { data, error } = await supabase
     .from('clients')
-    .insert([clientData])
+    .upsert([clientData], { onConflict: 'id' })
     .select()
     .single();
 

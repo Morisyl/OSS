@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { getTransactionById } from '../services/transactions.service';
 import { getTasksByTransaction } from '../services/transaction-services.service';
 import { subscribeToTransactionTasks } from '../services/realtime.service';
@@ -15,12 +15,11 @@ export const useTransaction = (transactionId) => {
     const fetchTransactionData = async () => {
       try {
         setLoading(true);
-        // Fetch the parent transaction and its children tasks simultaneously
         const [txData, tasksData] = await Promise.all([
           getTransactionById(transactionId),
           getTasksByTransaction(transactionId)
         ]);
-        
+
         setTransaction(txData);
         setTasks(tasksData);
       } catch (err) {
@@ -32,7 +31,6 @@ export const useTransaction = (transactionId) => {
 
     fetchTransactionData();
 
-    // Subscribe to task updates (e.g., when operator B clicks "Done" on a task)
     const unsubscribe = subscribeToTransactionTasks(
       transactionId,
       (updatedTask) => {
@@ -45,5 +43,8 @@ export const useTransaction = (transactionId) => {
     return () => unsubscribe();
   }, [transactionId]);
 
-  return { transaction, tasks, loading, error };
+  const packageTasks = useMemo(() => tasks.filter(t => !t.is_additional), [tasks]);
+  const additionalTasks = useMemo(() => tasks.filter(t => t.is_additional), [tasks]);
+
+  return { transaction, tasks, packageTasks, additionalTasks, loading, error };
 };

@@ -1,12 +1,6 @@
 import { useEffect } from 'react';
 
-export const Modal = ({ 
-  title, 
-  children, 
-  onClose, 
-  isOpen 
-}) => {
-  // Prevent background scrolling when modal is open
+export const Modal = ({ isOpen, onClose, title, children }) => {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -19,31 +13,36 @@ export const Modal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col items-center justify-center p-4 sm:p-6">
-      {/* Backdrop: Notice there is intentionally no onClick handler here to enforce the no-op rule */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+    // z-[100] ensures it sits above everything, including your navigation sidebar
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm m-0 p-0">
       
-      {/* Modal Content */}
-      <div className="relative w-full max-w-2xl bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-scale-in">
+      {/* w-[80vw] forces EXACTLY 80% screen width
+        h-[100vh] forces EXACTLY 100% screen height
+        max-w-none overrides any default framework constraints
+        rounded-none ensures it sits flush against the absolute top and bottom edges
+      */}
+      <div className="bg-white dark:bg-[#0F172A] w-[80vw] max-w-none h-[100vh] max-h-screen flex flex-col overflow-hidden border-x border-gray-200 dark:border-gray-800 rounded-none shadow-2xl">
         
-        {/* Header */}
-        <div className="px-8 py-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
-          <h2 className="text-xl font-bold tracking-tight text-black dark:text-white uppercase">
+        {/* Fixed Header */}
+        <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-gray-800 flex-none bg-white dark:bg-[#0F172A]">
+          <h2 className="text-xl font-bold uppercase tracking-tight text-black dark:text-white">
             {title}
           </h2>
-          {/* Optional X button, though your designs prefer bottom action buttons */}
           <button 
-            onClick={onClose}
-            className="text-gray-400 hover:text-black dark:hover:text-white transition-colors"
+            onClick={onClose} 
+            className="text-gray-400 hover:text-black dark:hover:text-white rounded-full p-2 bg-gray-100 dark:bg-gray-800 transition-colors"
           >
-            ✕
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
-        {/* Body */}
-        <div className="px-8 py-6 overflow-y-auto max-h-[70vh]">
+        {/* Content Area - Passes height control entirely to the children */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-[#0F172A]">
           {children}
         </div>
+
       </div>
     </div>
   );

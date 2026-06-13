@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTransaction } from '../../hooks/useTransaction';
-import { updateTransactionStatus } from '../../services/transactions.service';
+import { updateTransactionStatus, updateTransaction } from '../../services/transactions.service';
 import { updateTaskStatus } from '../../services/transaction-services.service';
-import { formatCurrency, calcBalance } from '../../utils/formatters';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { NewAppModal } from '../new-application/NewAppModal';
@@ -10,22 +9,20 @@ import { NewAppModal } from '../new-application/NewAppModal';
 export const TransactionDetail = ({ transactionId, onClose }) => {
   const { transaction, tasks, loading, error } = useTransaction(transactionId);
   const [view, setView] = useState('details'); 
-  
-  // NEW: Local state for instant checkbox toggling (Optimistic UI)
   const [localTasks, setLocalTasks] = useState([]);
+  const [localComment, setLocalComment] = useState('');
+  const [isSavingComment, setIsSavingComment] = useState(false);
 
-  // Sync local tasks whenever the database loads them
   useEffect(() => {
     if (tasks) setLocalTasks(tasks);
-  }, [tasks]);
+    if (transaction) setLocalComment(transaction.comments || '');
+  }, [tasks, transaction]);
 
-  // Calculate if all tasks are done using the local instant state
+  // Auto-complete transaction if all tasks are done
   useEffect(() => {
     if (localTasks.length > 0 && transaction?.progress_status !== 'Complete') {
       const allDone = localTasks.every(t => t.task_status === 'Done');
-      if (allDone) {
-        handleMarkTransactionComplete();
-      }
+      if (allDone) handleMarkTransactionComplete();
     }
   }, [localTasks]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -40,145 +37,182 @@ export const TransactionDetail = ({ transactionId, onClose }) => {
   const handleTaskToggle = async (taskId, currentStatus) => {
     const newStatus = currentStatus === 'Done' ? 'Pending' : 'Done';
     
-    // 1. OPTIMISTIC UPDATE: Instantly flip the switch in the UI
+    // Optimistic UI update
     setLocalTasks(prev => prev.map(t => 
       t.id === taskId ? { ...t, task_status: newStatus } : t
     ));
 
-    // 2. BACKGROUND DB UPDATE
+    // Database update
     try {
       await updateTaskStatus(taskId, newStatus);
     } catch (err) {
       console.error("Failed to toggle task", err);
-      // Revert the visual change if the database fails
-      setLocalTasks(tasks); 
+      setLocalTasks(tasks); // Revert on fail
     }
   };
 
-  if (loading && !transaction) {
-    return <Modal isOpen={true} onClose={onClose}><div className="py-20 text-center">Loading...</div></Modal>;
-  }
+  const handleCommentSave = async () => {
+    if (localComment === transaction.comments) return; // No changes made
+    setIsSavingComment(true);
+    try {
+      await updateTransaction(transactionId, { comments: localComment.trim() });
+    } catch (err) {
+      console.error("Failed to save comment", err);
+    } finally {
+      setIsSavingComment(false);
+    }
+  };
 
+  if (loading && !transaction) return <Modal isOpen={true} onClose={onClose}><div className="py-20 text-center">Loading...</div></Modal>;
   if (error || !transaction) return null;
 
+  // Render the Edit Mode (Reuses the New Application form)
   if (view === 'edit') {
-    return (
-      <NewAppModal 
-        isOpen={true} 
-        initialData={transaction} 
-        onClose={() => setView('details')} 
-      />
-    );
+    return <NewAppModal isOpen={true} initialData={transaction} onClose={() => setView('details')} />;
   }
 
-  if (view === 'progress') {
-    return (
-      <Modal isOpen={true} title="UPDATE PROGRESS" onClose={() => setView('details')}>
-        <div className="mb-6">
-          <p className="text-gray-500 font-medium text-sm">PACKAGE ID: {transaction.package_id}</p>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4 mb-8 min-h-[200px] content-start">
-          {/* Mapping over localTasks instead of tasks */}
-          {localTasks?.map(task => {
-            const isDone = task.task_status === 'Done';
-            return (
-              <label key={task.id} className="flex items-center gap-3 cursor-pointer p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-colors border border-transparent hover:border-gray-200 dark:hover:border-gray-700">
-                <input 
-                  type="checkbox" 
-                  checked={isDone}
-                  onChange={() => handleTaskToggle(task.id, task.task_status)}
-                  className="w-5 h-5 rounded border-gray-300 text-black dark:text-white accent-black dark:accent-white focus:ring-black cursor-pointer"
-                />
-                <span className={`font-medium ${isDone ? 'line-through text-gray-400' : 'text-black dark:text-white'}`}>
-                  {task.services?.name}
-                </span>
-              </label>
-            );
-          })}
-          {(!localTasks || localTasks.length === 0) && (
-            <p className="text-gray-400 col-span-2 italic">No services attached to this package.</p>
-          )}
-        </div>
-
-        <div className="flex justify-between items-center pt-6 border-t border-gray-100 dark:border-gray-800">
-          <Button variant="ghost" onClick={() => setView('details')}>BACK</Button>
-          <Button 
-            onClick={() => {
-              handleMarkTransactionComplete();
-              setView('details');
-            }}
-          >
-            COMPLETE
-          </Button>
-        </div>
-      </Modal>
-    );
-  }
-
-  const balance = calcBalance(transaction.packages?.price, transaction.paid_amount);
+  // Split tasks for rendering
+  const packageTasks = localTasks.filter(t => !t.is_additional);
+  const additionalTasks = localTasks.filter(t => t.is_additional);
 
   return (
-    <Modal isOpen={true} title="TRANSACTION DETAILS" onClose={onClose}>
-      <div className="space-y-6 mb-8">
-        <div>
-          <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1">COMPANY NAME</label>
-          <div className="text-2xl font-black">{transaction.company_name}</div>
+    <Modal isOpen={true} title="" onClose={onClose}>
+      
+      {/* Scrollable Form Body */}
+      <div className="flex-1 overflow-y-auto p-6 lg:p-10 space-y-10 custom-scrollbar">
+        
+        {/* Header Area */}
+        <div className="flex justify-between items-start border-b border-gray-100 dark:border-gray-800 pb-6">
+          <h1 className="text-3xl lg:text-4xl font-black text-black dark:text-white uppercase tracking-tight">
+            {transaction.company_name}
+          </h1>
+          <Button onClick={() => setView('edit')} className="bg-[#2a2656] hover:bg-[#1f1c40] text-white px-8">
+            Edit
+          </Button>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1">CLIENT ID</label>
-            <div className="font-medium">{transaction.clients?.id}</div>
+        {/* Read-Only Client Details */}
+        <section>
+          <h3 className="text-sm font-semibold text-black dark:text-white mb-4">Client details</h3>
+          <div className="space-y-3">
+            {transaction.transaction_clients?.map(tc => (
+              <div key={tc.clients.id} className="grid grid-cols-3 gap-4">
+                <div className="px-4 py-3 bg-gray-200 dark:bg-gray-800 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {tc.clients.id}
+                </div>
+                <div className="px-4 py-3 bg-gray-200 dark:bg-gray-800 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {tc.clients.name}
+                </div>
+                <div className="px-4 py-3 bg-gray-200 dark:bg-gray-800 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {tc.clients.phone_number}
+                </div>
+              </div>
+            ))}
           </div>
-          <div>
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1">CLIENT NAME</label>
-            <div className="font-medium">{transaction.clients?.name}</div>
-          </div>
-          <div>
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1">PHONE NUMBER</label>
-            <div className="font-medium">{transaction.clients?.phone_number}</div>
-          </div>
-        </div>
+        </section>
 
-        <div className="grid grid-cols-3 gap-4 border-t border-gray-100 dark:border-gray-800 pt-6">
-          <div>
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1">PACKAGE</label>
-            <div className="font-medium">{transaction.packages?.name}</div>
+        {/* Services & Progress Checklist */}
+        <section>
+          <h3 className="text-sm font-semibold text-black dark:text-white mb-4">Services ({transaction.packages?.name})</h3>
+          <div className="bg-gray-50 dark:bg-[#0b1120] p-6 rounded-xl border border-gray-100 dark:border-gray-800">
+            <div className="grid gap-3">
+              {packageTasks.map(task => {
+                const isDone = task.task_status === 'Done';
+                return (
+                  <label key={task.id} className="flex items-center gap-4 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={isDone}
+                      onChange={() => handleTaskToggle(task.id, task.task_status)}
+                      className="w-5 h-5 accent-[#2a2656] cursor-pointer"
+                    />
+                    <span className={`font-medium text-lg transition-all ${isDone ? 'line-through text-gray-400' : 'text-black dark:text-white group-hover:text-[#2a2656]'}`}>
+                      {task.services?.name}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
           </div>
-          <div>
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1">AMOUNT PAID</label>
-            <div className="font-medium">{formatCurrency(transaction.paid_amount)}</div>
-          </div>
-          <div>
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1">BALANCE</label>
-            <div className="font-medium">{formatCurrency(balance)}</div>
-          </div>
-        </div>
+        </section>
 
-        {transaction.comments && (
-          <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
-             <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1">Comments</label>
-             <div className="font-medium">{transaction.comments}</div>
-          </div>
+        {/* Conditional Additional Services Grid (4,x) */}
+        {additionalTasks.length > 0 && (
+          <section>
+            <h3 className="text-sm font-semibold text-black dark:text-white mb-4">Additional services</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {additionalTasks.map(task => {
+                const isDone = task.task_status === 'Done';
+                return (
+                  <label
+                    key={task.id}
+                    className={`flex items-center justify-center p-4 rounded-md cursor-pointer text-sm font-medium text-center transition-all ${
+                      isDone
+                        ? 'bg-[#2a2656] text-white ring-2 ring-[#2a2656]'
+                        : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="hidden"
+                      checked={isDone}
+                      onChange={() => handleTaskToggle(task.id, task.task_status)}
+                    />
+                    {task.services?.name}
+                  </label>
+                );
+              })}
+            </div>
+          </section>
         )}
+
+        {/* Editable Comments Area */}
+        <section>
+          <div className="flex justify-between items-end mb-2">
+            <label className="text-sm font-semibold text-black dark:text-white">Comments</label>
+            {isSavingComment && <span className="text-xs text-gray-400 font-bold animate-pulse">Saving...</span>}
+          </div>
+          <textarea
+            rows={5}
+            value={localComment}
+            onChange={(e) => setLocalComment(e.target.value)}
+            onBlur={handleCommentSave} // Saves to database when user clicks out
+            className="w-full px-4 py-3 bg-gray-200 dark:bg-gray-800 border-transparent rounded-md text-sm font-medium resize-none outline-none focus:ring-2 focus:ring-[#2a2656] text-black dark:text-white"
+          />
+        </section>
+
+        {/* Read-Only Paid Toggle */}
+        <section>
+          <label className="mb-4 block text-lg font-medium text-black dark:text-white">Paid?</label>
+          <div className="grid grid-cols-2 gap-4 opacity-70 pointer-events-none">
+            {[{ label: 'Yes', value: true }, { label: 'No', value: false }].map(opt => (
+              <div
+                key={String(opt.value)}
+                className={`flex items-center justify-center p-4 rounded-md transition-all relative ${
+                  transaction.is_paid === opt.value
+                    ? 'bg-gray-300 dark:bg-gray-700 ring-2 ring-gray-400'
+                    : 'bg-gray-200 dark:bg-gray-800'
+                }`}
+              >
+                <div className={`absolute left-6 w-4 h-4 rounded-full border-2 ${transaction.is_paid === opt.value ? 'border-black dark:border-white bg-black dark:bg-white' : 'border-gray-400'}`} />
+                <span className="font-medium text-lg text-black dark:text-white">{opt.label}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
       </div>
 
-      <div className="flex gap-4 border-t border-gray-100 dark:border-gray-800 pt-6 items-center">
-        <Button onClick={() => setView('progress')} className="flex-1">UPDATE PROGRESS</Button>
-        <Button variant="danger" onClick={() => setView('edit')} className="flex-1">EDIT</Button>
+      {/* Fixed Footer Control */}
+      <div className="p-6 bg-white dark:bg-[#0F172A] border-t border-gray-100 dark:border-gray-800 flex justify-center">
+        <Button 
+          onClick={onClose} 
+          className="bg-red-700 hover:bg-red-800 text-white text-lg font-bold w-48 py-3 rounded-xl shadow-lg transition-all"
+        >
+          CLOSE
+        </Button>
       </div>
       
-      <div className="flex gap-4 mt-4">
-        <Button 
-          onClick={handleMarkTransactionComplete} 
-          disabled={transaction.progress_status === 'Complete'}
-          className="flex-1"
-        >
-          {transaction.progress_status === 'Complete' ? 'COMPLETED' : 'COMPLETE'}
-        </Button>
-        <Button variant="ghost" onClick={onClose} className="flex-1">BACK</Button>
-      </div>
     </Modal>
   );
 };

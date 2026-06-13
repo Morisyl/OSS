@@ -3,51 +3,53 @@ import { useClients } from '../../hooks/useClients';
 import { createTransaction, updateTransaction } from '../../services/transactions.service';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
-import { StepProgress } from './StepProgress';
 import { StepClientDetails } from './StepClientDetails';
 import { StepPackagePicker } from './StepPackagePicker';
-import { StepTransactionDetails } from './StepTransactionDetails';
+import { StepCompanyDetails } from './StepCompanyDetails';
+import { StepComments } from './StepComments';
 import { isValidPhone } from '../../utils/validators';
 
 const getDefaultData = () => ({
-  clientId: '', 
-  clientName: '',
-  phone: '',
-  isNewClient: null,
+  clients: [{ clientId: '', clientName: '', phone: '', isNewClient: null }], // array of clients
+  companyName: '',
   packageId: null,
   packagePrice: 0,
-  companyName: '',
-  paidAmount: '',
-  paymentStatus: 'Unpaid',
+  additionalServiceIds: [],
+  isPaid: false,
   comments: ''
 });
 
 export const NewAppModal = ({ isOpen, onClose, initialData = null }) => {
-  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState(getDefaultData());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   
   const { createNewClient } = useClients();
 
-  // If initialData is passed (Edit Mode), prefill the form
+  // If initialData is passed (Edit Mode), prefill the form using the new schema
   useEffect(() => {
     if (initialData) {
       setFormData({
-        clientId: initialData.clients?.id || '',
-        clientName: initialData.clients?.name || '',
-        phone: initialData.clients?.phone_number || '',
-        isNewClient: false,
+        // Map the new junction table data back into the form state
+        clients: initialData.transaction_clients?.map(tc => ({
+          clientId: tc.clients.id,
+          clientName: tc.clients.name,
+          phone: tc.clients.phone_number,
+          isNewClient: false
+        })) || [{ clientId: '', clientName: '', phone: '', isNewClient: null }],
+        companyName: initialData.company_name || '',
         packageId: initialData.package_id,
         packagePrice: initialData.packages?.price || 0,
-        companyName: initialData.company_name || '',
-        paidAmount: initialData.paid_amount.toString(),
-        paymentStatus: initialData.payment_status,
+        // Map any existing additional services
+        additionalServiceIds: initialData.transaction_services
+          ?.filter(ts => ts.is_additional)
+          .map(ts => ts.service_id) || [],
+        isPaid: initialData.is_paid || false,
         comments: initialData.comments || ''
       });
     } else {
       setFormData(getDefaultData());
-      setStep(1);
+      setError(null);
     }
   }, [initialData, isOpen]);
 
@@ -55,69 +57,68 @@ export const NewAppModal = ({ isOpen, onClose, initialData = null }) => {
     setFormData(prev => ({ ...prev, ...newData }));
   };
 
-  const handleNext = () => {
-    setError(null);
-    if (step === 1) {
-      if (!formData.clientId.trim()) return setError("Client ID is required.");
-      if (!formData.clientName.trim()) return setError("Client name is required.");
-      if (!isValidPhone(formData.phone)) return setError("Please enter a valid phone number.");
-    }
-    if (step === 2) {
-      if (!formData.packageId) return setError("Please select a package.");
-    }
-    setStep(prev => prev + 1);
-  };
-
   const handleBack = () => {
     setError(null);
-    if (step > 1) {
-      setStep(prev => prev - 1);
-    } else {
-      onClose();
-    }
+    onClose();
   };
 
   const handleSubmit = async () => {
-    if (!formData.companyName.trim()) return setError("Company name is required.");
-    
-    setIsSubmitting(true);
     setError(null);
 
-    try {
-      let finalClientId = formData.clientId;
+    // 1. Unified Validation
+    if (!formData.companyName.trim()) {
+      return setError("Company name is required.");
+    }
 
-      // Create client if new
-      if (formData.isNewClient) {
-        const newClient = await createNewClient({ 
-          id: formData.clientId.trim(), 
-          name: formData.clientName.trim(), 
-          phone_number: formData.phone.trim() 
-        });
-        finalClientId = newClient.id;
-      }
+    const anyInvalidClient = formData.clients.some(
+      c => !c.clientId.trim() || !c.clientName.trim() || !isValidPhone(c.phone)
+    );
+    if (anyInvalidClient || formData.clients.length === 0) {
+      return setError("All client rows require an ID, Name, and a valid Phone number.");
+    }
+
+    if (!formData.packageId) {
+      return setError("Please select a package.");
+    }
+
+    // 2. Submission logic
+    setIsSubmitting(true);
+
+    try {
+      // Resolve / create all clients
+      const clientIds = await Promise.all(
+        formData.clients.map(async (c) => {
+          if (c.isNewClient) {
+            const newClient = await createNewClient({
+              id: c.clientId.trim(),
+              name: c.clientName.trim(),
+              phone_number: c.phone.trim()
+            });
+            return newClient.id;
+          }
+          return c.clientId.trim();
+        })
+      );
 
       const payload = {
-        client_id: finalClientId,
+        clientIds,
         package_id: formData.packageId,
         company_name: formData.companyName.trim(),
-        paid_amount: Number(formData.paidAmount) || 0,
-        payment_status: formData.paymentStatus,
+        is_paid: formData.isPaid,
+        additionalServiceIds: formData.additionalServiceIds,
         comments: formData.comments.trim()
       };
 
       if (initialData) {
-        // EDIT MODE
         await updateTransaction(initialData.id, payload);
       } else {
-        // NEW CREATION MODE
         payload.progress_status = 'Pending';
         await createTransaction(payload);
       }
 
       onClose();
     } catch (err) {
-      console.error("SUPABASE SUBMIT ERROR:", err); 
-      setError(err.message || "Failed to save to the database.");
+      setError(err.message || "Failed to save.");
     } finally {
       setIsSubmitting(false);
     }
@@ -125,29 +126,55 @@ export const NewAppModal = ({ isOpen, onClose, initialData = null }) => {
 
   return (
     <Modal isOpen={isOpen} title={initialData ? "Edit Application" : "New Application"} onClose={handleBack}>
-      <StepProgress currentStep={step} totalSteps={3} />
       
-      {error && <div className="mb-6 p-3 bg-red-50 text-red-600 rounded-xl text-sm font-medium">{error}</div>}
+      {error && (
+        <div className="mx-8 mt-6 p-4 bg-red-50 text-red-600 rounded-xl text-sm font-bold border border-red-100">
+          {error}
+        </div>
+      )}
 
-      <div className="mb-8 min-h-[300px]">
-        {step === 1 && <StepClientDetails data={formData} updateData={updateData} />}
-        {step === 2 && <StepPackagePicker selectedPackageId={formData.packageId} updateData={updateData} />}
-        {step === 3 && <StepTransactionDetails data={formData} updateData={updateData} />}
+      {/* Scrollable Form Body 
+        Uses flex-1 to fill the remaining Modal height, and overflow-y-auto to create the SINGLE scrollbar.
+      */}
+      <div className="flex-1 overflow-y-auto p-6 lg:p-10 space-y-12 custom-scrollbar">
+        
+        <section>
+          <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-6 border-b border-gray-100 dark:border-gray-800 pb-3">Company Information</h3>
+          <StepCompanyDetails data={formData} updateData={updateData} />
+        </section>
+
+        <section>
+          <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-6 border-b border-gray-100 dark:border-gray-800 pb-3">Client Details</h3>
+          <StepClientDetails data={formData} updateData={updateData} />
+        </section>
+
+        <section>
+          <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-6 border-b border-gray-100 dark:border-gray-800 pb-3">Services & Packages</h3>
+          <StepPackagePicker data={formData} updateData={updateData} />
+        </section>
+
+        <section>
+          <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-6 border-b border-gray-100 dark:border-gray-800 pb-3">Final Details</h3>
+          <StepComments data={formData} updateData={updateData} />
+        </section>
+
       </div>
 
-      <div className="flex justify-between items-center pt-6 border-t border-gray-100 dark:border-gray-800">
-        <Button variant="ghost" onClick={handleBack} disabled={isSubmitting}>
-          {step === 1 ? 'Cancel' : 'Back'}
+      {/* Fixed Footer Controls */}
+      <div className="flex justify-between items-center p-6 lg:p-8 bg-gray-50 dark:bg-[#0b1120] border-t border-gray-100 dark:border-gray-800">
+        <Button variant="ghost" onClick={handleBack} disabled={isSubmitting} className="text-lg px-6 py-3">
+          Cancel
         </Button>
         
-        {step < 3 ? (
-          <Button onClick={handleNext}>Next Step</Button>
-        ) : (
-          <Button onClick={handleSubmit} loading={isSubmitting}>
-            {initialData ? "Save Changes" : "Complete Application"}
-          </Button>
-        )}
+        <Button 
+          onClick={handleSubmit} 
+          loading={isSubmitting} 
+          className="bg-red-700 hover:bg-red-800 text-white text-lg font-bold px-12 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all"
+        >
+          {initialData ? "Save Changes" : "Submit"}
+        </Button>
       </div>
+      
     </Modal>
   );
 };

@@ -19,6 +19,7 @@ export default function HomePage() {
   const { results: searchResults, loading: searchLoading } = useSearch(searchQuery);
 
   return (
+    <>
     <div className="max-w-5xl mx-auto h-full flex flex-col relative animate-scale-in">
       
       {/* Header & Search Block */}
@@ -83,22 +84,15 @@ export default function HomePage() {
           </div>
         )}
       </div>
-
-      {/* Orchestrated Modals */}
-      {isNewAppOpen && (
-        <NewAppModal 
-          isOpen={isNewAppOpen} 
-          onClose={() => setIsNewAppOpen(false)} 
-        />
-      )}
-
-      {selectedTransactionId && (
-        <TransactionDetail 
-          transactionId={selectedTransactionId} 
-          onClose={() => setSelectedTransactionId(null)} 
-        />
-      )}
-
     </div>
+
+    {isNewAppOpen && (
+      <NewAppModal isOpen={isNewAppOpen} onClose={() => setIsNewAppOpen(false)} />
+    )}
+    {selectedTransactionId && (
+      <TransactionDetail transactionId={selectedTransactionId} onClose={() => setSelectedTransactionId(null)} />
+    )}    
+
+    </>
   );
 }

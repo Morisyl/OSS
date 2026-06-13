@@ -20,14 +20,6 @@ export const statusLabel = (status) => {
   return status || 'Unknown';
 };
 
-export const calcBalance = (price, paid) => {
-  const safePrice = Number(price) || 0;
-  const safePaid = Number(paid) || 0;
-  
-  const balance = safePrice - safePaid;
-  return balance < 0 ? 0 : balance; // Prevents negative balance on overpayment
-};
-
 export const toSupabaseEmail = (username) => {
   if (!username) return '';
   return `${username.trim().toLowerCase().replace(/\s+/g, '')}@oss.local`;

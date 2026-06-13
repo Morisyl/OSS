@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 import { Spinner } from '../common/Spinner';
+import { deletePackage } from '../../services/packages.service';
 
 export const PackageForm = ({ initialData, onSave, onCancel }) => {
   const { services, loading: loadingServices } = useServices();
@@ -98,7 +99,26 @@ export const PackageForm = ({ initialData, onSave, onCancel }) => {
 
       <div className="flex justify-between pt-4">
         <Button variant="ghost" onClick={onCancel} disabled={isSaving}>Back</Button>
-        <Button type="submit" loading={isSaving}>Save Package</Button>
+        <div className="flex gap-2">
+          {initialData?.id && (
+            <Button
+              variant="danger"
+              disabled={isSaving}
+              onClick={async () => {
+                if (!window.confirm("Delete this package?")) return;
+                try {
+                  await deletePackage(initialData.id);
+                  onSave();
+                } catch {
+                  setError("Cannot delete a package with active transactions.");
+                }
+              }}
+            >
+              Delete
+            </Button>
+          )}
+          <Button type="submit" loading={isSaving}>Save Package</Button>
+        </div>
       </div>
     </form>
   );

@@ -1,7 +1,6 @@
 export const PAYMENT_STATUS = {
-  UNPAID: 'Unpaid',
-  PARTIAL: 'Partial',
-  PAID: 'Paid'
+  PAID: true,
+  UNPAID: false
 };
 
 export const PROGRESS_STATUS = {

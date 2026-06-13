@@ -46,7 +46,7 @@ export default function RootLayout({ children }) {
             {showShell && <TopBar />}
             <div className="flex flex-1 overflow-hidden">
               {showShell && <Sidebar />}
-              <main className="flex-1 overflow-y-auto p-4 md:p-8 relative">
+              <main className="flex-1 overflow-y-auto p-4 md:p-8">
                 {children}
               </main>
             </div>
