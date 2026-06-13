@@ -85,7 +85,7 @@ export const ServiceManager = () => {
       
       {actionError && <div className="mb-6 p-3 bg-red-50 text-red-600 rounded-xl text-sm font-medium">{actionError}</div>}
 
-      // UPDATE the form to remove the label and sit below the divider:
+      
       <form onSubmit={handleAddService} className="flex gap-4 mb-6 items-center">
         <div className="flex-1">
           <Input
