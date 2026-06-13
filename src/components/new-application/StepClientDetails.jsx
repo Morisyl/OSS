@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useClients } from '../../hooks/useClients';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
@@ -18,6 +17,7 @@ const ClientRow = ({ client, index, onChange, onLookup }) => {
         placeholder="Enter ID"
         value={client.clientId}
         onChange={(e) => onChange(index, 'clientId', e.target.value)}
+        onBlur={() => onLookup(index)}
         helperText={helperMessage}
       />
       <div className="flex gap-3">
@@ -52,25 +52,20 @@ export const StepClientDetails = ({ data, updateData }) => {
     updateData({ clients: updated });
   };
 
-  // Debounced lookup per row
-  useEffect(() => {
-    const timers = data.clients.map((client, index) => {
-      return setTimeout(async () => {
-        if (client.clientId?.trim().length > 0) {
-          const found = await lookupClientId(client.clientId.trim());
-          const updated = data.clients.map((c, i) =>
-            i === index
-              ? found
-                ? { ...c, clientName: found.name || '', phone: found.phone_number || '', isNewClient: false }
-                : { ...c, isNewClient: true }
-              : c
-          );
-          updateData({ clients: updated });
-        }
-      }, 500);
-    });
-    return () => timers.forEach(clearTimeout);
-  }, [data.clients.map(c => c.clientId).join(',')]); // eslint-disable-line
+  const handleLookup = async (index) => {
+    const client = data.clients[index];
+    if (!client.clientId?.trim()) return;
+
+    const found = await lookupClientId(client.clientId.trim());
+    const updated = data.clients.map((c, i) =>
+      i === index
+        ? found
+          ? { ...c, clientName: found.name || '', phone: found.phone_number || '', isNewClient: false }
+          : { ...c, isNewClient: true }
+        : c
+    );
+    updateData({ clients: updated });
+  };
 
   const addRow = () => {
     updateData({
@@ -86,7 +81,7 @@ export const StepClientDetails = ({ data, updateData }) => {
           client={client}
           index={index}
           onChange={handleChange}
-          onLookup={() => {}}
+          onLookup={handleLookup}
         />
       ))}
       <Button variant="secondary" onClick={addRow} className="w-full">

@@ -68,7 +68,11 @@ export const TransactionDetail = ({ transactionId, onClose }) => {
 
   // Render the Edit Mode (Reuses the New Application form)
   if (view === 'edit') {
-    return <NewAppModal isOpen={true} initialData={transaction} onClose={() => setView('details')} />;
+    const transactionWithTasks = {
+      ...transaction,
+      transaction_services: localTasks  // inject the already-loaded tasks
+    };
+    return <NewAppModal isOpen={true} initialData={transactionWithTasks} onClose={() => setView('details')} />;
   }
 
   // Split tasks for rendering

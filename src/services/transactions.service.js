@@ -133,7 +133,27 @@ export const updateTransaction = async (id, txData) => {
   if (clientIds) {
     await supabase.from('transaction_clients').delete().eq('transaction_id', id);
     const rows = clientIds.map(cid => ({ transaction_id: id, client_id: cid }));
-    await supabase.from('transaction_clients').insert(rows);
+    if (rows.length) await supabase.from('transaction_clients').insert(rows);
+  }
+
+  // Re-sync additional services
+  if (additionalServiceIds !== undefined) {
+    // Delete only the additional tasks, leave package tasks untouched
+    await supabase
+      .from('transaction_services')
+      .delete()
+      .eq('transaction_id', id)
+      .eq('is_additional', true);
+
+    if (additionalServiceIds.length > 0) {
+      const additionalRows = additionalServiceIds.map(sid => ({
+        transaction_id: id,
+        service_id: sid,
+        task_status: 'Pending',
+        is_additional: true
+      }));
+      await supabase.from('transaction_services').insert(additionalRows);
+    }
   }
 
   return data;
