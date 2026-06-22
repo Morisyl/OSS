@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect } from 'react';
 
 export const Modal = ({ isOpen, onClose, title, children }) => {
@@ -14,14 +16,14 @@ export const Modal = ({ isOpen, onClose, title, children }) => {
 
   return (
     // z-[100] ensures it sits above everything, including your navigation sidebar
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm m-0 p-0">
+    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/70 backdrop-blur-sm m-0 p-0">
       
       {/* w-[80vw] forces EXACTLY 80% screen width
         h-[100vh] forces EXACTLY 100% screen height
         max-w-none overrides any default framework constraints
         rounded-none ensures it sits flush against the absolute top and bottom edges
       */}
-      <div className="bg-white dark:bg-[#0F172A] w-[80vw] max-w-none h-[100vh] max-h-screen flex flex-col overflow-hidden border-x border-gray-200 dark:border-gray-800 rounded-none shadow-2xl">
+      <div className="bg-white dark:bg-[#0F172A] w-[80vw] max-w-none h-screen max-h-screen flex flex-col overflow-hidden border-x border-gray-200 dark:border-gray-800 rounded-none shadow-2xl">
         
         {/* Fixed Header */}
         <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-gray-800 flex-none bg-white dark:bg-[#0F172A]">

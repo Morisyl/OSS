@@ -5,6 +5,8 @@ import { updateTaskStatus } from '../../services/transaction-services.service';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { NewAppModal } from '../new-application/NewAppModal';
+import { DynamicFormRender } from '../common/DynamicFormRender';
+import { supabase } from '../../lib/supabase'
 
 export const TransactionDetail = ({ transactionId, onClose }) => {
   const { transaction, tasks, loading, error } = useTransaction(transactionId);
@@ -12,11 +14,18 @@ export const TransactionDetail = ({ transactionId, onClose }) => {
   const [localTasks, setLocalTasks] = useState([]);
   const [localComment, setLocalComment] = useState('');
   const [isSavingComment, setIsSavingComment] = useState(false);
+  const [companyFields, setCompanyFields] = useState([]);
 
   useEffect(() => {
     if (tasks) setLocalTasks(tasks);
     if (transaction) setLocalComment(transaction.comments || '');
   }, [tasks, transaction]);
+
+  // Fetch dynamic company fields
+  useEffect(() => {  
+    supabase.from('form_fields').select('*').eq('target_entity', 'company').order('sort_order')
+      .then(({ data: d }) => { if (d) setCompanyFields(d); });
+  }, []);
 
   // Auto-complete transaction if all tasks are done
   useEffect(() => {
@@ -24,7 +33,8 @@ export const TransactionDetail = ({ transactionId, onClose }) => {
       const allDone = localTasks.every(t => t.task_status === 'Done');
       if (allDone) handleMarkTransactionComplete();
     }
-  }, [localTasks]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [localTasks]);
+  // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleMarkTransactionComplete = async () => {
     try {
@@ -53,6 +63,7 @@ export const TransactionDetail = ({ transactionId, onClose }) => {
 
   const handleCommentSave = async () => {
     if (localComment === transaction.comments) return; // No changes made
+    
     setIsSavingComment(true);
     try {
       await updateTransaction(transactionId, { comments: localComment.trim() });
@@ -87,10 +98,21 @@ export const TransactionDetail = ({ transactionId, onClose }) => {
         
         {/* Header Area */}
         <div className="flex justify-between items-start border-b border-gray-100 dark:border-gray-800 pb-6">
-          <h1 className="text-3xl lg:text-4xl font-black text-black dark:text-white uppercase tracking-tight">
-            {transaction.company_name}
-          </h1>
-          <Button onClick={() => setView('edit')} className="bg-[#2a2656] hover:bg-[#1f1c40] text-white px-8">
+          <div className="flex-1 pr-6">
+            <h1 className="text-3xl lg:text-4xl font-black text-black dark:text-white uppercase tracking-tight">
+              {transaction.company_name}
+            </h1>
+            {companyFields.length > 0 && transaction.company_dynamic_data && (
+              <div className="mt-4">
+                <DynamicFormRender
+                  fields={companyFields}
+                  formData={transaction.company_dynamic_data}
+                  onChange={() => {}} // read-only
+                />
+              </div>
+            )}
+          </div>
+          <Button onClick={() => setView('edit')} className="bg-[#2a2656] hover:bg-[#1f1c40] text-white px-8 shrink-0">
             Edit
           </Button>
         </div>

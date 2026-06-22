@@ -1,13 +1,18 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import { useClients } from '../../hooks/useClients';
+import { supabase } from '../../lib/supabase';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
+import { DynamicFormRender } from '../common/DynamicFormRender';
 
-const ClientRow = ({ client, index, onChange, onLookup }) => {
+const ClientRow = ({ client, index, onChange, onLookup, dynamicFields }) => {
   const helperMessage = client.isNewClient === false
-    ? "✅ Existing client found."
+    ? '✅ Existing client found.'
     : client.isNewClient === true
-      ? "✨ New client will be created."
-      : "";
+      ? '✨ New client will be created.'
+      : '';
 
   return (
     <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl space-y-3">
@@ -38,12 +43,31 @@ const ClientRow = ({ client, index, onChange, onLookup }) => {
           className="flex-1"
         />
       </div>
+
+      {/* Dynamic fields for this client */}
+      {dynamicFields.length > 0 && (
+        <DynamicFormRender
+          fields={dynamicFields}
+          formData={client.dynamicData || {}}
+          onChange={(updated) => onChange(index, 'dynamicData', updated)}
+        />
+      )}
     </div>
   );
 };
 
 export const StepClientDetails = ({ data, updateData }) => {
   const { lookupClientId } = useClients();
+  const [dynamicFields, setDynamicFields] = useState([]);
+
+  useEffect(() => {
+    supabase
+      .from('form_fields')
+      .select('*')
+      .eq('target_entity', 'client')
+      .order('sort_order')
+      .then(({ data: d }) => { if (d) setDynamicFields(d); });
+  }, []);
 
   const handleChange = (index, field, value) => {
     const updated = data.clients.map((c, i) =>
@@ -55,12 +79,11 @@ export const StepClientDetails = ({ data, updateData }) => {
   const handleLookup = async (index) => {
     const client = data.clients[index];
     if (!client.clientId?.trim()) return;
-
     const found = await lookupClientId(client.clientId.trim());
     const updated = data.clients.map((c, i) =>
       i === index
         ? found
-          ? { ...c, clientName: found.name || '', phone: found.phone_number || '', isNewClient: false }
+          ? { ...c, clientName: found.name || '', phone: found.phone_number || '', isNewClient: false, dynamicData: found.dynamic_data || {} }
           : { ...c, isNewClient: true }
         : c
     );
@@ -69,7 +92,7 @@ export const StepClientDetails = ({ data, updateData }) => {
 
   const addRow = () => {
     updateData({
-      clients: [...data.clients, { clientId: '', clientName: '', phone: '', isNewClient: null }]
+      clients: [...data.clients, { clientId: '', clientName: '', phone: '', isNewClient: null, dynamicData: {} }]
     });
   };
 
@@ -82,6 +105,7 @@ export const StepClientDetails = ({ data, updateData }) => {
           index={index}
           onChange={handleChange}
           onLookup={handleLookup}
+          dynamicFields={dynamicFields}
         />
       ))}
       <Button variant="secondary" onClick={addRow} className="w-full">

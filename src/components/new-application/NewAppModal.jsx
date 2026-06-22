@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { useClients } from '../../hooks/useClients';
 import { createTransaction, updateTransaction } from '../../services/transactions.service';
@@ -8,10 +10,14 @@ import { StepPackagePicker } from './StepPackagePicker';
 import { StepCompanyDetails } from './StepCompanyDetails';
 import { StepComments } from './StepComments';
 import { isValidPhone } from '../../utils/validators';
+import { ExpandableTile } from '../common/ExpandableTile';
+
+
 
 const getDefaultData = () => ({
-  clients: [{ clientId: '', clientName: '', phone: '', isNewClient: null }], // array of clients
+  clients: [{ clientId: '', clientName: '', phone: '', isNewClient: null, dynamicData: {} }],
   companyName: '',
+  companyDynamicData: {},
   packageId: null,
   packagePrice: 0,
   additionalServiceIds: [],
@@ -38,6 +44,10 @@ export const NewAppModal = ({ isOpen, onClose, initialData = null }) => {
           isNewClient: false
         })) || [{ clientId: '', clientName: '', phone: '', isNewClient: null }],
         companyName: initialData.company_name || '',
+
+        companyDynamicData: initialData.company_dynamic_data || {},
+        // For clients, the lookup already hydrates dynamicData from found.dynamic_data (done in StepClientDetails)
+
         packageId: initialData.package_id,
         packagePrice: initialData.packages?.price || 0,
         // Map any existing additional services
@@ -104,6 +114,7 @@ export const NewAppModal = ({ isOpen, onClose, initialData = null }) => {
         clientIds,
         package_id: formData.packageId,
         company_name: formData.companyName.trim(),
+        company_dynamic_data: formData.companyDynamicData,
         is_paid: formData.isPaid,
         additionalServiceIds: formData.additionalServiceIds,
         comments: formData.comments.trim()
@@ -138,15 +149,13 @@ export const NewAppModal = ({ isOpen, onClose, initialData = null }) => {
       */}
       <div className="flex-1 overflow-y-auto p-6 lg:p-10 space-y-12 custom-scrollbar">
         
-        <section>
-          <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-6 border-b border-gray-100 dark:border-gray-800 pb-3">Company Information</h3>
+        <ExpandableTile title="Company Details" defaultOpen={true}>
           <StepCompanyDetails data={formData} updateData={updateData} />
-        </section>
+        </ExpandableTile>
 
-        <section>
-          <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-6 border-b border-gray-100 dark:border-gray-800 pb-3">Client Details</h3>
+        <ExpandableTile title="Client Details">
           <StepClientDetails data={formData} updateData={updateData} />
-        </section>
+        </ExpandableTile>
 
         <section>
           <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-6 border-b border-gray-100 dark:border-gray-800 pb-3">Services & Packages</h3>
