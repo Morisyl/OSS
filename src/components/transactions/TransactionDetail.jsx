@@ -15,6 +15,8 @@ export const TransactionDetail = ({ transactionId, onClose, onListRefetch }) => 
   const [localComment, setLocalComment] = useState('');
   const [isSavingComment, setIsSavingComment] = useState(false);
   const [companyFields, setCompanyFields] = useState([]);
+  const [extraEntities, setExtraEntities] = useState([]);
+  const [extraFields, setExtraFields] = useState({});
 
   useEffect(() => {
     if (tasks) setLocalTasks(tasks);
@@ -25,6 +27,22 @@ export const TransactionDetail = ({ transactionId, onClose, onListRefetch }) => 
   useEffect(() => {  
     supabase.from('form_fields').select('*').eq('target_entity', 'company').order('sort_order')
       .then(({ data: d }) => { if (d) setCompanyFields(d); });
+  }, []);
+
+  // Fetch custom entities (anything other than company/client) and their fields
+  useEffect(() => {
+    supabase.from('form_fields').select('*').not('target_entity', 'in', '(company,client)').order('sort_order')
+      .then(({ data }) => {
+        if (!data) return;
+        const uniqueEntities = [...new Set(data.map(f => f.target_entity))];
+        setExtraEntities(uniqueEntities);
+        const grouped = {};
+        data.forEach(f => {
+          grouped[f.target_entity] = grouped[f.target_entity] || [];
+          grouped[f.target_entity].push(f);
+        });
+        setExtraFields(grouped);
+      });
   }, []);
 
   // Auto-complete transaction if all tasks are done
@@ -151,6 +169,20 @@ export const TransactionDetail = ({ transactionId, onClose, onListRefetch }) => 
             ))}
           </div>
         </section>
+
+        {extraEntities.map(entity => (
+          <section key={entity}>
+            <h3 className="text-sm font-semibold text-black dark:text-white mb-4 capitalize">
+              {entity.replace(/_/g, ' ')}
+            </h3>
+            <DynamicFormRender
+              fields={extraFields[entity] || []}
+              formData={transaction.custom_data?.[entity] || {}}
+              onChange={() => {}} // read-only
+            />
+          </section>
+        ))}
+
 
         {/* Services & Progress Checklist */}
         <section>
