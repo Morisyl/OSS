@@ -39,3 +39,23 @@ export const subscribeToTransactionTasks = (transactionId, onUpdate) => {
     supabase.removeChannel(channel);
   };
 };
+
+
+export const subscribeToTransactionRow = (transactionId, onUpdate) => {
+ const channel = supabase.channel(`public:transactions:${transactionId}`)
+   .on(
+     'postgres_changes',
+     {
+       event: 'UPDATE',
+       schema: 'public',
+       table: 'transactions',
+       filter: `id=eq.${transactionId}`
+     },
+     (payload) => onUpdate(payload.new)
+   )
+   .subscribe();
+
+ return () => {
+   supabase.removeChannel(channel);
+ };
+};

@@ -9,8 +9,11 @@ import { StepClientDetails } from './StepClientDetails';
 import { StepPackagePicker } from './StepPackagePicker';
 import { StepCompanyDetails } from './StepCompanyDetails';
 import { StepComments } from './StepComments';
+import { supabase } from '../../lib/supabase';
+import { DynamicFormRender } from '../common/DynamicFormRender';
 import { isValidPhone } from '../../utils/validators';
 import { ExpandableTile } from '../common/ExpandableTile';
+import { ExtraEntitySection } from './ExtraEntitySection';
 
 
 
@@ -18,6 +21,7 @@ const getDefaultData = () => ({
   clients: [{ clientId: '', clientName: '', phone: '', isNewClient: null, dynamicData: {} }],
   companyName: '',
   companyDynamicData: {},
+  customData: {},
   packageId: null,
   packagePrice: 0,
   additionalServiceIds: [],
@@ -25,12 +29,24 @@ const getDefaultData = () => ({
   comments: ''
 });
 
-export const NewAppModal = ({ isOpen, onClose, initialData = null }) => {
+export const NewAppModal = ({ isOpen, onClose, onSaved, initialData = null }) => {
   const [formData, setFormData] = useState(getDefaultData());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   
   const { createNewClient } = useClients();
+  const [extraEntities, setExtraEntities] = useState([]);
+
+  useEffect(() => {
+    supabase
+      .from('form_fields')
+      .select('target_entity')
+      .not('target_entity', 'in', '(company,client)')
+      .then(({ data }) => {
+        const unique = [...new Set((data || []).map(f => f.target_entity))];
+        setExtraEntities(unique);
+      });
+  }, []);
 
   // If initialData is passed (Edit Mode), prefill the form using the new schema
   useEffect(() => {
@@ -55,6 +71,7 @@ export const NewAppModal = ({ isOpen, onClose, initialData = null }) => {
           ?.filter(ts => ts.is_additional)
           .map(ts => ts.service_id) || [],
         isPaid: initialData.is_paid || false,
+        customData: initialData.custom_data || {},
         comments: initialData.comments || ''
       });
     } else {
@@ -102,8 +119,11 @@ export const NewAppModal = ({ isOpen, onClose, initialData = null }) => {
             const newClient = await createNewClient({
               id: c.clientId.trim(),
               name: c.clientName.trim(),
-              phone_number: c.phone.trim()
+              phone_number: c.phone.trim(),
+              dynamic_data: c.dynamicData || {}
             });
+
+
             return newClient.id;
           }
           return c.clientId.trim();
@@ -115,6 +135,7 @@ export const NewAppModal = ({ isOpen, onClose, initialData = null }) => {
         package_id: formData.packageId,
         company_name: formData.companyName.trim(),
         company_dynamic_data: formData.companyDynamicData,
+        custom_data: formData.customData,
         is_paid: formData.isPaid,
         additionalServiceIds: formData.additionalServiceIds,
         comments: formData.comments.trim()
@@ -127,6 +148,7 @@ export const NewAppModal = ({ isOpen, onClose, initialData = null }) => {
         await createTransaction(payload);
       }
 
+      if (onSaved) onSaved();
       onClose();
     } catch (err) {
       setError(err.message || "Failed to save.");
@@ -162,6 +184,16 @@ export const NewAppModal = ({ isOpen, onClose, initialData = null }) => {
           <StepPackagePicker data={formData} updateData={updateData} />
         </section>
 
+        {extraEntities.map(entity => (
+          <ExpandableTile key={entity} title={entity.replace(/_/g, ' ')}>
+            <ExtraEntitySection
+              entity={entity}
+              formData={formData}
+              updateData={updateData}
+            />
+          </ExpandableTile>
+        ))}
+        
         <section>
           <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-6 border-b border-gray-100 dark:border-gray-800 pb-3">Final Details</h3>
           <StepComments data={formData} updateData={updateData} />

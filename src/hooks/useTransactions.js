@@ -7,38 +7,32 @@ export const useTransactions = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        setLoading(true);
-        const data = await getActiveTransactions();
-        setTransactions(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchTransactions = async () => {
+    try {
+      setLoading(true);
+      const data = await getActiveTransactions();
+      setTransactions(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchInitialData();
+  useEffect(() => {
+    fetchTransactions();
 
     // Setup Real-time Subscription
     const unsubscribe = subscribeToTransactions(
-      // onInsert handler: Add new transaction to the top of the list instantly
-      (newRow) => {
-        setTransactions((current) => [newRow, ...current]);
-      },
-      // onUpdate handler: Find the existing row and swap it with the new data
-      (updatedRow) => {
-        setTransactions((current) => 
-          current.map((t) => (t.id === updatedRow.id ? { ...t, ...updatedRow } : t))
-        );
-      }
+      // onInsert: payload has no joins, refetch full joined list
+     () => fetchTransactions(),
+     // onUpdate: same reason, refetch full joined list
+     () => fetchTransactions()
     );
 
     // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 
-  return { transactions, loading, error };
+  return { transactions, loading, error, refetch: fetchTransactions };
 };

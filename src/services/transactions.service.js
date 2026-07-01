@@ -121,6 +121,14 @@ export const searchTransactions = async (query) => {
 export const updateTransaction = async (id, txData) => {
   const { clientIds, additionalServiceIds, ...dbPayload } = txData;
 
+  // Fetch current package_id BEFORE update, to detect a change
+  const { data: existingTx, error: fetchError } = await supabase
+    .from('transactions')
+    .select('package_id')
+    .eq('id', id)
+    .single();
+  if (fetchError) throw fetchError;
+
   const { data, error } = await supabase
     .from('transactions')
     .update(dbPayload)
@@ -134,6 +142,33 @@ export const updateTransaction = async (id, txData) => {
     await supabase.from('transaction_clients').delete().eq('transaction_id', id);
     const rows = clientIds.map(cid => ({ transaction_id: id, client_id: cid }));
     if (rows.length) await supabase.from('transaction_clients').insert(rows);
+  }
+
+  // Re-sync package tasks if the package changed
+  if (dbPayload.package_id && dbPayload.package_id !== existingTx.package_id) {
+    // Remove old package-derived tasks (leave additional tasks alone)
+    await supabase
+      .from('transaction_services')
+      .delete()
+      .eq('transaction_id', id)
+      .eq('is_additional', false);
+
+    const { data: pkgServices, error: pkgError } = await supabase
+      .from('package_services')
+      .select('service_id')
+      .eq('package_id', dbPayload.package_id);
+    if (pkgError) throw pkgError;
+
+    const packageTasks = (pkgServices || []).map(ps => ({
+      transaction_id: id,
+      service_id: ps.service_id,
+      task_status: 'Pending',
+      is_additional: false
+    }));
+
+    if (packageTasks.length > 0) {
+      await supabase.from('transaction_services').insert(packageTasks);
+    }
   }
 
   // Re-sync additional services

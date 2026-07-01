@@ -1,8 +1,12 @@
 "use client";
 
 import { useState } from 'react';
+import { useMemo } from 'react';
 import { useSearch } from '../../hooks/useSearch';
+import { useTransactions } from '../../hooks/useTransactions';
+import { usePackages } from '../../hooks/usePackages';
 import { TransactionList } from '../../components/transactions/TransactionList';
+import { TransactionTabs } from '../../components/transactions/TransactionTabs';
 import { TransactionCard } from '../../components/transactions/TransactionCard';
 import { TransactionDetail } from '../../components/transactions/TransactionDetail';
 import { NewAppModal } from '../../components/new-application/NewAppModal';
@@ -14,9 +18,31 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isNewAppOpen, setIsNewAppOpen] = useState(false);
   const [selectedTransactionId, setSelectedTransactionId] = useState(null);
+  const [activeTab, setActiveTab] = useState('active');
 
+  const { transactions, loading, error, refetch } = useTransactions();
+  const { packages } = usePackages();
   // Debounced search hook built in Phase 6
   const { results: searchResults, loading: searchLoading } = useSearch(searchQuery);
+
+  const tabs = useMemo(() => ([
+    { id: 'active', label: 'Active' },
+    ...packages.map(p => ({ id: p.id, label: p.name })),
+    { id: 'completed', label: 'Completed' }
+  ]), [packages]);
+
+  const filteredTransactions = useMemo(() => {
+    if (activeTab === 'completed') {
+      return transactions.filter(t => t.progress_status === 'Complete');
+    }
+    if (activeTab === 'active') {
+      return transactions.filter(t => t.progress_status !== 'Complete');
+    }
+    // package tab: active transactions on that package only
+    return transactions.filter(
+      t => t.progress_status !== 'Complete' && t.package_id === activeTab
+    );
+  }, [transactions, activeTab]);
 
   return (
     <>
@@ -77,20 +103,31 @@ export default function HomePage() {
         ) : (
           // Default Active Transactions View
           <div className="space-y-4">
-            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 ml-2">
-              Active Transactions
-            </h3>
-            <TransactionList onSelectTransaction={setSelectedTransactionId} />
+            <TransactionTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+            <TransactionList
+             transactions={filteredTransactions}
+             loading={loading}
+             error={error}
+             onSelectTransaction={setSelectedTransactionId}
+           />
           </div>
         )}
       </div>
     </div>
 
     {isNewAppOpen && (
-      <NewAppModal isOpen={isNewAppOpen} onClose={() => setIsNewAppOpen(false)} />
+      <NewAppModal
+       isOpen={isNewAppOpen}
+       onClose={() => setIsNewAppOpen(false)}
+       onSaved={refetch}
+     />
     )}
     {selectedTransactionId && (
-      <TransactionDetail transactionId={selectedTransactionId} onClose={() => setSelectedTransactionId(null)} />
+      <TransactionDetail
+       transactionId={selectedTransactionId}
+       onClose={() => setSelectedTransactionId(null)}
+       onListRefetch={refetch}
+     />
     )}    
 
     </>

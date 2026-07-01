@@ -1,10 +1,7 @@
-import { useTransactions } from '../../hooks/useTransactions';
 import { TransactionCard } from './TransactionCard';
 import { Spinner } from '../common/Spinner';
 
-export const TransactionList = ({ onSelectTransaction }) => {
-  const { transactions, loading, error } = useTransactions();
-
+export const TransactionList = ({ transactions, loading, error, onSelectTransaction }) => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">

@@ -8,8 +8,8 @@ import { NewAppModal } from '../new-application/NewAppModal';
 import { DynamicFormRender } from '../common/DynamicFormRender';
 import { supabase } from '../../lib/supabase'
 
-export const TransactionDetail = ({ transactionId, onClose }) => {
-  const { transaction, tasks, loading, error } = useTransaction(transactionId);
+export const TransactionDetail = ({ transactionId, onClose, onListRefetch }) => {
+  const { transaction, tasks, loading, error, refetch } = useTransaction(transactionId);
   const [view, setView] = useState('details'); 
   const [localTasks, setLocalTasks] = useState([]);
   const [localComment, setLocalComment] = useState('');
@@ -39,6 +39,8 @@ export const TransactionDetail = ({ transactionId, onClose }) => {
   const handleMarkTransactionComplete = async () => {
     try {
       await updateTransactionStatus(transactionId, { progress_status: 'Complete' });
+      refetch();
+      if (onListRefetch) onListRefetch();
     } catch (err) {
       console.error("Failed to update status:", err);
     }
@@ -55,6 +57,7 @@ export const TransactionDetail = ({ transactionId, onClose }) => {
     // Database update
     try {
       await updateTaskStatus(taskId, newStatus);
+      if (onListRefetch) onListRefetch();
     } catch (err) {
       console.error("Failed to toggle task", err);
       setLocalTasks(tasks); // Revert on fail
@@ -67,6 +70,8 @@ export const TransactionDetail = ({ transactionId, onClose }) => {
     setIsSavingComment(true);
     try {
       await updateTransaction(transactionId, { comments: localComment.trim() });
+      refetch();
+      if (onListRefetch) onListRefetch();
     } catch (err) {
       console.error("Failed to save comment", err);
     } finally {
@@ -83,7 +88,17 @@ export const TransactionDetail = ({ transactionId, onClose }) => {
       ...transaction,
       transaction_services: localTasks  // inject the already-loaded tasks
     };
-    return <NewAppModal isOpen={true} initialData={transactionWithTasks} onClose={() => setView('details')} />;
+    return (
+     <NewAppModal
+       isOpen={true}
+       initialData={transactionWithTasks}
+       onClose={() => setView('details')}
+       onSaved={() => {
+         refetch();
+         if (onListRefetch) onListRefetch();
+       }}
+     />
+   );
   }
 
   // Split tasks for rendering

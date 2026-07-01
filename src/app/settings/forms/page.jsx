@@ -2,12 +2,24 @@
 
 import { useState } from 'react';
 import { FormEditor } from '../../../components/settings/FormEditor';
+import { useEffect } from 'react';
+import { supabase } from '../../../lib/supabase';
 
 export default function FormBuilderPage() {
   // Seed with the two fixed entities; user can add more
   const [entities, setEntities] = useState(['company', 'client']);
   const [isAdding, setIsAdding] = useState(false);
   const [newEntityName, setNewEntityName] = useState('');
+
+  useEffect(() => {
+    supabase
+      .from('form_fields')
+      .select('target_entity')
+      .then(({ data }) => {
+        const found = [...new Set((data || []).map(f => f.target_entity))];
+        setEntities(prev => [...new Set([...prev, ...found])]);
+      });
+  }, []);
 
   const handleAddComponent = () => {
     const key = newEntityName.trim().toLowerCase().replace(/\s+/g, '_');

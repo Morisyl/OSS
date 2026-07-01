@@ -13,7 +13,7 @@ export const TransactionCard = ({ transaction, onClick }) => {
             {transaction.company_name}
           </h3>
           <p className="text-sm font-medium text-gray-500 mt-1">
-            ID: {transaction.clients?.id} • {transaction.clients?.name}
+            ID: {transaction.transaction_clients?.[0]?.clients?.id} • {transaction.transaction_clients?.[0]?.clients?.name}
           </p>
         </div>
         <div className="text-right">
