@@ -7,7 +7,7 @@ import { Input } from '../common/Input';
 import { Button } from '../common/Button';
 import { DynamicFormRender } from '../common/DynamicFormRender';
 
-const ClientRow = ({ client, index, onChange, onLookup, dynamicFields }) => {
+const ClientRow = ({ client, index, onChange, onLookup, onRemove, canRemove, dynamicFields }) => {
   const helperMessage = client.isNewClient === false
     ? '✅ Existing client found.'
     : client.isNewClient === true
@@ -16,7 +16,18 @@ const ClientRow = ({ client, index, onChange, onLookup, dynamicFields }) => {
 
   return (
     <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl space-y-3">
-      <div className="text-xs font-bold uppercase tracking-widest text-gray-400">Client {index + 1}</div>
+      <div className="flex items-center justify-between">
+       <div className="text-xs font-bold uppercase tracking-widest text-gray-400">Client {index + 1}</div>
+       {canRemove && (
+         <button
+           type="button"
+           onClick={() => onRemove(index)}
+           className="text-xs font-bold text-red-500 hover:text-red-600"
+         >
+           Remove
+         </button>
+       )}
+     </div>
       <Input
         label="Client ID / Passport No."
         placeholder="Enter ID"
@@ -96,6 +107,12 @@ export const StepClientDetails = ({ data, updateData }) => {
     });
   };
 
+  const removeRow = (index) => {
+    updateData({
+      clients: data.clients.filter((_, i) => i !== index)
+    });
+  };
+
   return (
     <div className="space-y-4 animate-scale-in">
       {data.clients.map((client, index) => (
@@ -105,11 +122,13 @@ export const StepClientDetails = ({ data, updateData }) => {
           index={index}
           onChange={handleChange}
           onLookup={handleLookup}
+          onRemove={removeRow}
+         canRemove={data.clients.length > 1}
           dynamicFields={dynamicFields}
         />
       ))}
       <Button variant="secondary" onClick={addRow} className="w-full">
-        + Add Client
+        Add Client
       </Button>
     </div>
   );

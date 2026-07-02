@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 
-// 1. Creates transaction AND seeds tasks (Package services + Additional services)
+// 1. Creates transaction AND seeds tasks (Package services Additional services)
 export const createTransaction = async (txData) => {
   const { clientIds, additionalServiceIds, ...dbPayload } = txData;
 
@@ -96,7 +96,27 @@ export const searchTransactions = async (query) => {
     .select('transaction_id')
     .ilike('client_id', `%${query}%`);
 
-  const matchedTxIds = clientMatches?.map(m => m.transaction_id) || [];
+  // Find transaction IDs associated with matching Client Names
+  const { data: clientsByName } = await supabase
+    .from('clients')
+    .select('id')
+    .ilike('name', `%${query}%`);
+
+  const nameMatchedClientIds = clientsByName?.map(c => c.id) || [];
+
+  let nameMatchTxIds = [];
+  if (nameMatchedClientIds.length > 0) {
+    const { data: nameMatches } = await supabase
+      .from('transaction_clients')
+      .select('transaction_id')
+      .in('client_id', nameMatchedClientIds);
+    nameMatchTxIds = nameMatches?.map(m => m.transaction_id) || [];
+  }
+
+  const matchedTxIds = [...new Set([
+    ...(clientMatches?.map(m => m.transaction_id) || []),
+    ...nameMatchTxIds
+  ])];
 
   let queryBuilder = supabase
     .from('transactions')

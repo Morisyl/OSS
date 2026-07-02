@@ -2,10 +2,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { exportTransactionsToCSV } from '../../services/export.service';
+import { useUIStore } from '../../store/useUIStore';
 
 export const Sidebar = () => {
   const pathname = usePathname();
-
+  const { mobileSidebarOpen, closeMobileSidebar } = useUIStore();
   const [isExporting, setIsExporting] = useState(false);
 
  const handleExport = async () => {
@@ -25,7 +26,20 @@ export const Sidebar = () => {
   ];
 
   return (
-    <aside className="w-64 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 hidden md:flex flex-col">
+
+    <>
+      {mobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={closeMobileSidebar}
+        />
+      )}
+
+    <aside
+        className={`w-64 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col fixed inset-y-0 left-0 z-50 transform transition-transform duration-200 md:static md:translate-x-0 ${
+          mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
       <nav className="flex-1 py-8 px-4 flex flex-col gap-2">
         
         {/* Dynamic Navigation Items */}
@@ -35,6 +49,7 @@ export const Sidebar = () => {
             <Link 
               key={item.path} 
               href={item.path}
+              onClick={closeMobileSidebar}
               className={`px-4 py-3 rounded-xl font-semibold transition-all ${
                 isActive 
                   ? 'bg-black text-white dark:bg-white dark:text-black' 
@@ -57,6 +72,7 @@ export const Sidebar = () => {
             <Link
               key={item.path}
               href={item.path}
+              onClick={closeMobileSidebar}
               className={`px-4 py-3 rounded-xl font-semibold transition-all ${
                 isActive
                   ? 'bg-black text-white dark:bg-white dark:text-black'
@@ -89,6 +105,6 @@ export const Sidebar = () => {
        </button>
         
       </nav>
-    </aside>
+    </aside></>
   );
 };
