@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTransaction } from '../../hooks/useTransaction';
-import { updateTransactionStatus, updateTransaction } from '../../services/transactions.service';
+import { updateTransactionStatus, updateTransaction, deleteTransaction } from '../../services/transactions.service';
 import { updateTaskStatus } from '../../services/transaction-services.service';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
@@ -17,6 +17,7 @@ export const TransactionDetail = ({ transactionId, onClose, onListRefetch }) => 
   const [companyFields, setCompanyFields] = useState([]);
   const [extraEntities, setExtraEntities] = useState([]);
   const [extraFields, setExtraFields] = useState({});
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (tasks) setLocalTasks(tasks);
@@ -61,6 +62,20 @@ export const TransactionDetail = ({ transactionId, onClose, onListRefetch }) => 
       if (onListRefetch) onListRefetch();
     } catch (err) {
       console.error("Failed to update status:", err);
+    }
+  };
+
+
+  const handleDelete = async () => {
+    if (!confirm('Delete this transaction permanently? This cannot be undone.')) return;
+    setIsDeleting(true);
+    try {
+      await deleteTransaction(transactionId);
+      if (onListRefetch) onListRefetch();
+      onClose();
+    } catch (err) {
+      console.error('Failed to delete transaction:', err);
+      setIsDeleting(false);
     }
   };
 
@@ -277,7 +292,14 @@ export const TransactionDetail = ({ transactionId, onClose, onListRefetch }) => 
       </div>
 
       {/* Fixed Footer Control */}
-      <div className="p-6 bg-white dark:bg-[#0F172A] border-t border-gray-100 dark:border-gray-800 flex justify-center">
+      <div className="p-6 bg-white dark:bg-[#0F172A] border-t border-gray-100 dark:border-gray-800 flex justify-center gap-4">
+        <Button
+          onClick={handleDelete}
+          disabled={isDeleting}
+          className="bg-transparent border-2 border-red-700 hover:bg-red-700 text-red-700 hover:text-white text-lg font-bold w-48 py-3 rounded-xl transition-all disabled:opacity-50"
+        >
+          {isDeleting ? 'Deleting...' : 'DELETE'}
+        </Button>
         <Button 
           onClick={onClose} 
           className="bg-red-700 hover:bg-red-800 text-white text-lg font-bold w-48 py-3 rounded-xl shadow-lg transition-all"

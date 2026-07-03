@@ -23,18 +23,21 @@ export const createTransaction = async (txData) => {
   }
 
   // 3. Seed package tasks
-  const { data: pkgServices, error: pkgError } = await supabase
-    .from('package_services')
-    .select('service_id')
-    .eq('package_id', dbPayload.package_id);
-  if (pkgError) throw pkgError;
+  let packageTasks = [];
+  if (dbPayload.package_id) {
+    const { data: pkgServices, error: pkgError } = await supabase
+      .from('package_services')
+      .select('service_id')
+      .eq('package_id', dbPayload.package_id);
+    if (pkgError) throw pkgError;
 
-  const packageTasks = (pkgServices || []).map(ps => ({
-    transaction_id: transaction.id,
-    service_id: ps.service_id,
-    task_status: 'Pending',
-    is_additional: false
-  }));
+    packageTasks = (pkgServices || []).map(ps => ({
+      transaction_id: transaction.id,
+      service_id: ps.service_id,
+      task_status: 'Pending',
+      is_additional: false
+    }));
+  }
 
   // 4. Seed additional service tasks
   const additionalTasks = (additionalServiceIds || []).map(sid => ({
@@ -224,4 +227,12 @@ export const updateTransactionStatus = async (id, statusData) => {
     .single();
   if (error) throw error;
   return data;
+};
+
+// Deletes a transaction and its child rows
+export const deleteTransaction = async (id) => {
+  await supabase.from('transaction_services').delete().eq('transaction_id', id);
+  await supabase.from('transaction_clients').delete().eq('transaction_id', id);
+  const { error } = await supabase.from('transactions').delete().eq('id', id);
+  if (error) throw error;
 };

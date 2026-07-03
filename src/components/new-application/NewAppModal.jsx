@@ -104,8 +104,8 @@ export const NewAppModal = ({ isOpen, onClose, onSaved, initialData = null }) =>
       return setError("All client rows require an ID, Name, and a valid Phone number.");
     }
 
-    if (!formData.packageId) {
-      return setError("Please select a package.");
+    if (!formData.packageId && (!formData.additionalServiceIds || formData.additionalServiceIds.length === 0)) {
+      return setError("Please select a package or at least one additional service.");
     }
 
     // 2. Submission logic

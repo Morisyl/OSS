@@ -93,7 +93,7 @@ export const StepPackagePicker = ({ data, updateData }) => {
       </div>
 
       {/* Additional services grid (4-column) */}
-      {data.packageId && additionalPool.length > 0 && (
+      {additionalPool.length > 0 && (
         <div>
           <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 ml-1">
             Additional Services
