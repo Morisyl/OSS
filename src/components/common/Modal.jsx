@@ -1,8 +1,13 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 export const Modal = ({ isOpen, onClose, title, children }) => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -12,11 +17,11 @@ export const Modal = ({ isOpen, onClose, title, children }) => {
     return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
-    // z-[100] ensures it sits above everything, including your navigation sidebar
-    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/70 backdrop-blur-sm m-0 p-0">
+  return createPortal(
+      // z-[100] ensures it sits above everything, including your navigation sidebar
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm m-0 p-0">
       
       {/* w-[80vw] forces EXACTLY 80% screen width
         h-[100vh] forces EXACTLY 100% screen height
@@ -46,6 +51,7 @@ export const Modal = ({ isOpen, onClose, title, children }) => {
         </div>
 
       </div>
-    </div>
-  );
+    </div>,
+      document.body
+    );
 };

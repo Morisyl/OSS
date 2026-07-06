@@ -1,24 +1,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { exportTransactionsToCSV } from '../../services/export.service';
+import { ExportModal } from '../export/ExportModal';
 import { useUIStore } from '../../store/useUIStore';
 
 export const Sidebar = () => {
   const pathname = usePathname();
   const { mobileSidebarOpen, closeMobileSidebar } = useUIStore();
-  const [isExporting, setIsExporting] = useState(false);
-
- const handleExport = async () => {
-    setIsExporting(true);
-    try {
-      await exportTransactionsToCSV();
-    } catch (err) {
-      console.error('Export failed:', err);
-    } finally {
-      setIsExporting(false);
-    }
-  };
+  const [isExportOpen, setIsExportOpen] = useState(false);
 
   const navItems = [
     { label: 'Transactions', path: '/home' },
@@ -87,8 +76,7 @@ export const Sidebar = () => {
 
         {/* Export Transactions to CSV */}
        <button
-         onClick={handleExport}
-         disabled={isExporting}
+         onClick={() => setIsExportOpen(true)}
          className="flex items-center gap-4 px-6 py-4 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group mt-2 disabled:opacity-50 text-left"
        >
          <svg
@@ -100,11 +88,12 @@ export const Sidebar = () => {
            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M7 10l5 5 5-5M12 15V3" />
          </svg>
          <span className="font-bold uppercase tracking-widest text-sm text-gray-500 group-hover:text-black dark:group-hover:text-white transition-colors">
-           {isExporting ? 'Exporting...' : 'Export CSV'}
+           Export CSV
          </span>
        </button>
         
       </nav>
+      <ExportModal isOpen={isExportOpen} onClose={() => setIsExportOpen(false)} />
     </aside></>
   );
 };
