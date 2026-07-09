@@ -25,10 +25,12 @@ export const Input = forwardRef(({
         type={type}
         placeholder={placeholder}
         className={`
-          px-4 py-3 bg-gray-100 dark:bg-gray-800 
+          px-6 py-3 bg-transparent
           rounded-full outline-none transition-all duration-200
-          text-black dark:text-white placeholder-gray-400
-          focus:ring-2 focus:ring-black dark:focus:ring-white
+          border-2 border-blue-400/60 dark:border-blue-400/60
+          text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-300
+          font-bold text-center
+          focus:border-blue-400 focus:ring-0
           ${hasError 
             ? 'border-2 border-red-500 bg-red-50 dark:bg-red-900/20' 
             : 'border border-transparent'

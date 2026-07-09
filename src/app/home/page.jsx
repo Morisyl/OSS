@@ -94,32 +94,34 @@ export default function HomePage() {
     <div className="max-w-5xl mx-auto h-full flex flex-col relative animate-scale-in">
       
       {/* Header & Search Block */}
-      <div className="mb-8 space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-black tracking-tight uppercase text-black dark:text-white">
-              Dashboard
-            </h1>
-            <p className="text-gray-500 font-medium mt-1">
-              Manage active transactions and incoming client applications.
-            </p>
-          </div>
+      <div className="mb-8 space-y-6 pt-10 md:pt-2">
+        <div className="flex justify-end">
           <Button onClick={() => setIsNewAppOpen(true)}>
             New Application
           </Button>
         </div>
 
-        <div className="relative">
-          <Input 
-            placeholder="Search by Company or Client ID..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+        <div className="flex items-center justify-center gap-4">
+          <div className="w-40" /> {/* balances FilterBar width so search stays centered */}
+          <div className="relative max-w-md w-full">
+            <Input
+              placeholder="Search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchLoading && (
+              <div className="absolute right-6 top-1/2 -translate-y-1/2">
+                <Spinner className="w-5 h-5" color="text-blue-400" />
+              </div>
+            )}
+          </div>
+          <FilterBar
+            filterFields={filterFields}
+            selectedField={selectedFilterField}
+            onFieldChange={setSelectedFilterField}
+            selectedValue={selectedFilterValue}
+            onValueChange={setSelectedFilterValue}
           />
-          {searchLoading && (
-            <div className="absolute right-4 top-1/2 -translate-y-1/2">
-              <Spinner className="w-5 h-5" color="text-black dark:text-white" />
-            </div>
-          )}
         </div>
       </div>
 
@@ -148,14 +150,10 @@ export default function HomePage() {
         ) : (
           // Default Active Transactions View
           <div className="space-y-4">
-            <TransactionTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
-            <FilterBar
-              filterFields={filterFields}
-              selectedField={selectedFilterField}
-              onFieldChange={setSelectedFilterField}
-              selectedValue={selectedFilterValue}
-              onValueChange={setSelectedFilterValue}
-            />
+            <div className="flex justify-center">
+              <TransactionTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+            </div>
+            
             <TransactionList
              transactions={filteredTransactions}
              loading={loading}

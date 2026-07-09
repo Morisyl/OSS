@@ -3,54 +3,37 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { ExportModal } from '../export/ExportModal';
 import { useUIStore } from '../../store/useUIStore';
+import { useAuth } from '../../hooks/useAuth';
+import { ThemeToggle } from './ThemeToggle';
 
 export const Sidebar = () => {
   const pathname = usePathname();
   const { mobileSidebarOpen, closeMobileSidebar } = useUIStore();
+  const { username, signOut } = useAuth();
   const [isExportOpen, setIsExportOpen] = useState(false);
 
-  const navItems = [
-    { label: 'Transactions', path: '/home' },
-    { label: 'Settings', path: '/settings' }
-  ];
+  
 
   return (
 
     <>
       {mobileSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
           onClick={closeMobileSidebar}
         />
       )}
 
     <aside
-        className={`w-64 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col fixed inset-y-0 left-0 z-50 transform transition-transform duration-200 md:static md:translate-x-0 ${
+        className={`w-72 bg-black border-r border-white/10 flex flex-col fixed inset-y-0 left-0 z-50 transform transition-transform duration-200 ${
           mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
       <nav className="flex-1 py-8 px-4 flex flex-col gap-2">
         
         {/* Dynamic Navigation Items */}
-        {navItems.map((item) => {
-          const isActive = pathname.startsWith(item.path);
-          return (
-            <Link 
-              key={item.path} 
-              href={item.path}
-              onClick={closeMobileSidebar}
-              className={`px-4 py-3 rounded-xl font-semibold transition-all ${
-                isActive 
-                  ? 'bg-black text-white dark:bg-white dark:text-black' 
-                  : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-800'
-              }`}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
 
-        {/* Static Form Builder Link (Moved OUTSIDE the map function) */}
+        {/* Navigation */}
         {[
           { label: 'Transactions', path: '/home' },
           { label: 'Settings', path: '/settings' },
@@ -90,6 +73,22 @@ export const Sidebar = () => {
          <span className="font-bold uppercase tracking-widest text-sm text-gray-500 group-hover:text-black dark:group-hover:text-white transition-colors">
            Export CSV
          </span>
+       </button>
+
+       <hr className="border-white/10 my-4" />
+
+       <div className="px-6 py-3 flex items-center justify-between">
+         <span className="text-sm font-medium text-gray-400">
+           {username ? `Logged in as ${username}` : ''}
+         </span>
+         <ThemeToggle />
+       </div>
+
+       <button
+         onClick={signOut}
+         className="text-left px-6 py-4 rounded-2xl font-bold uppercase tracking-widest text-sm text-red-400 hover:bg-white/5 transition-colors"
+       >
+         Logout
        </button>
         
       </nav>

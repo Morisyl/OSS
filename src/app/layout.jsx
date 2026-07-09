@@ -43,8 +43,8 @@ export default function RootLayout({ children }) {
           </div>
         ) : (
           <>
-            {showShell && <TopBar />}
-            <div className="flex flex-1 overflow-hidden">
+            <div className="flex flex-1 overflow-hidden relative">
+              {showShell && <TopBar />}
               {showShell && <Sidebar />}
               <main className="flex-1 overflow-y-auto p-4 md:p-8">
                 {children}
