@@ -16,6 +16,7 @@ export const FormEditor = ({ targetEntity = 'company' }) => {
 
   const [isFieldModalOpen, setIsFieldModalOpen] = useState(false);
   const [newField, setNewField] = useState({ type: 'text', label: '', isRequired: false, options: '' });
+  const [editingFieldId, setEditingFieldId] = useState(null);
   const [newDocName, setNewDocName] = useState('');
 
   const [newDocFileTypes, setNewDocFileTypes] = useState('any');
@@ -36,13 +37,19 @@ export const FormEditor = ({ targetEntity = 'company' }) => {
     const fieldKey = newField.label.toLowerCase().replace(/[^a-z0-9]/g, '_');
     const optionsArray = newField.type === 'dropdown' ? newField.options.split(',').map(s => s.trim()).filter(s => s) : null;
 
-    const { error } = await supabase.from('form_fields').insert([{
+    const payload = {
       target_entity: targetEntity, field_label: newField.label, field_key: fieldKey, field_type: newField.type, options: optionsArray, is_required: newField.isRequired
-    }]);
+    };
+
+    const { error } = editingFieldId
+      ? await supabase.from('form_fields').update(payload).eq('id', editingFieldId)
+      : await supabase.from('form_fields').insert([payload]);
+
 
     if (!error) {
       setIsFieldModalOpen(false);
       setNewField({ type: 'text', label: '', isRequired: false, options: '' });
+      setEditingFieldId(null);
       fetchData();
     }
   };
@@ -73,6 +80,17 @@ export const FormEditor = ({ targetEntity = 'company' }) => {
 
 
   const openFieldModal = (type) => { setNewField({ ...newField, type }); setIsFieldModalOpen(true); };
+
+  const openEditFieldModal = (field) => {
+    setEditingFieldId(field.id);
+    setNewField({
+      type: field.field_type,
+      label: field.field_label,
+      isRequired: field.is_required,
+      options: (field.options || []).join(', ')
+    });
+    setIsFieldModalOpen(true);
+  };
 
   if (loading) return <div className="animate-pulse bg-gray-100 dark:bg-gray-800 rounded-[2.5rem] h-24 w-full"></div>;
 
@@ -122,6 +140,14 @@ export const FormEditor = ({ targetEntity = 'company' }) => {
             <span className="text-black dark:text-white">{field.field_label}</span>
             <div className="flex items-center gap-3">
               {field.is_required && <span className="text-red-500 text-xs font-bold uppercase tracking-wider">Required</span>}
+
+              <button
+                onClick={() => openEditFieldModal(field)}
+                className="bg-gray-200 dark:bg-gray-700 text-black dark:text-white text-xs font-medium px-4 py-1.5 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              >
+                Edit
+              </button>
+
               <button
                 onClick={() => handleDeleteField(field.id)}
                 className="bg-[#e31837] text-white text-xs font-medium px-4 py-1.5 rounded-full hover:bg-red-700 transition-colors"
@@ -200,7 +226,11 @@ export const FormEditor = ({ targetEntity = 'company' }) => {
       </div>
 
       {/* Field Creation Modal */}
-      <Modal isOpen={isFieldModalOpen} onClose={() => setIsFieldModalOpen(false)} title={`ADD NEW ${newField.type.toUpperCase()}`}>
+      <Modal
+        isOpen={isFieldModalOpen}
+        onClose={() => { setIsFieldModalOpen(false); setEditingFieldId(null); }}
+        title={`${editingFieldId ? 'EDIT' : 'ADD NEW'} ${newField.type.toUpperCase()}`}
+      >
         <div className="space-y-6">
           <Input label="Data Name (Display Label)" placeholder="e.g. KRA PIN" value={newField.label} onChange={(e) => setNewField({...newField, label: e.target.value})} />
           {newField.type === 'dropdown' && (
@@ -210,7 +240,9 @@ export const FormEditor = ({ targetEntity = 'company' }) => {
             <input type="checkbox" checked={newField.isRequired} onChange={(e) => setNewField({...newField, isRequired: e.target.checked})} className="w-5 h-5 accent-[#1a73e8]" />
             <span className="font-medium">Is this field required?</span>
           </label>
-          <Button onClick={handleSaveField} className="w-full mt-4 bg-[#1a73e8] hover:bg-blue-600 border-none">SAVE FIELD</Button>
+          <Button onClick={handleSaveField} className="w-full mt-4 bg-[#1a73e8] hover:bg-blue-600 border-none">
+            {editingFieldId ? 'UPDATE FIELD' : 'SAVE FIELD'}
+          </Button>
         </div>
       </Modal>
 

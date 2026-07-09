@@ -33,12 +33,16 @@ export const StepPackagePicker = ({ data, updateData }) => {
 
   const handlePackageClick = (pkg) => {
     if (data.packageId === pkg.id) {
-      // Second click — toggle the services dropdown
-      setExpandedPkg(prev => prev === pkg.id ? null : pkg.id);
+      // Single click on the selected package — deselect
+      updateData({ packageId: null, packagePrice: null, additionalServiceIds: [] });
     } else {
       updateData({ packageId: pkg.id, packagePrice: pkg.price, additionalServiceIds: [] });
-      setExpandedPkg(null);
     }
+    setExpandedPkg(null);
+  };
+
+  const handlePackageDoubleClick = (pkg) => {
+    setExpandedPkg(prev => prev === pkg.id ? null : pkg.id);
   };
 
   return (
@@ -49,6 +53,7 @@ export const StepPackagePicker = ({ data, updateData }) => {
           <div key={pkg.id}>
             <div
               onClick={() => handlePackageClick(pkg)}
+              onDoubleClick={() => handlePackageDoubleClick(pkg)}
               className={`
                 p-5 rounded-3xl border-2 cursor-pointer transition-all duration-200 flex items-center gap-4
                 ${data.packageId === pkg.id

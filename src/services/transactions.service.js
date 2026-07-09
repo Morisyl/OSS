@@ -130,9 +130,13 @@ export const searchTransactions = async (query) => {
     `);
 
   if (matchedTxIds.length > 0) {
-    queryBuilder = queryBuilder.or(`company_name.ilike.%${query}%,id.in.(${matchedTxIds.join(',')})`);
+    queryBuilder = queryBuilder.or(
+      `company_name.ilike.%${query}%,company_dynamic_data->>registration_number.ilike.%${query}%,id.in.(${matchedTxIds.join(',')})`
+    );
   } else {
-    queryBuilder = queryBuilder.ilike('company_name', `%${query}%`);
+    queryBuilder = queryBuilder.or(
+      `company_name.ilike.%${query}%,company_dynamic_data->>registration_number.ilike.%${query}%`
+    );
   }
 
   const { data, error } = await queryBuilder.order('created_at', { ascending: false });
