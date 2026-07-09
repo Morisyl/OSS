@@ -36,14 +36,14 @@ const ClientRow = ({ client, index, onChange, onLookup, onRemove, canRemove, dyn
         onBlur={() => onLookup(index)}
         helperText={helperMessage}
       />
-      <div className="flex gap-3">
+      <div className="flex flex-col sm:flex-row gap-3">
         <Input
           label="Name"
           placeholder="Full name"
           value={client.clientName}
           onChange={(e) => onChange(index, 'clientName', e.target.value)}
           disabled={client.isNewClient === false}
-          className="flex-1"
+          className="flex-1 min-w-0"
         />
         <Input
           label="Phone No."
@@ -51,7 +51,7 @@ const ClientRow = ({ client, index, onChange, onLookup, onRemove, canRemove, dyn
           value={client.phone}
           onChange={(e) => onChange(index, 'phone', e.target.value)}
           disabled={client.isNewClient === false}
-          className="flex-1"
+          className="flex-1 min-w-0"
         />
       </div>
 

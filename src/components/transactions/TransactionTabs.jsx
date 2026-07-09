@@ -7,8 +7,8 @@ export const TransactionTabs = ({ tabs, activeTab, onChange }) => {
           onClick={() => onChange(tab.id)}
           className={`pb-3 text-lg sm:text-2xl font-bold whitespace-nowrap transition-all border-b-2 -mb-px ${
             activeTab === tab.id
-              ? 'text-white dark:text-white border-white dark:border-white'
-              : 'text-gray-400 border-transparent hover:text-gray-200'
+              ? 'text-black dark:text-white border-black dark:border-white'
+              : 'text-gray-500 dark:text-gray-400 border-transparent hover:text-gray-700 dark:hover:text-gray-200'
           }`}
         >
           {tab.label}

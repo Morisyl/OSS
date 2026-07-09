@@ -17,7 +17,7 @@ export const TransactionCard = ({ transaction, onClick }) => {
           </p>
         </div>
         <div className="text-right">
-          <div className="text-sm font-bold text-gray-400">{formatDate(transaction.created_at)}</div>
+          <div className="text-sm font-bold text-gray-500 dark:text-gray-400">{formatDate(transaction.created_at)}</div>
           <div className="text-lg font-bold text-black dark:text-white mt-1">{formatCurrency(transaction.packages?.price)}</div>
         </div>
       </div>
@@ -25,7 +25,7 @@ export const TransactionCard = ({ transaction, onClick }) => {
       <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-50 dark:border-gray-800">
         <TransactionBadge type="payment" status={transaction.payment_status} />
         <TransactionBadge type="progress" status={transaction.progress_status} />
-        <span className="text-sm font-semibold text-gray-400 ml-auto bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
+        <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 ml-auto bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
           {transaction.packages?.name}
         </span>
       </div>
