@@ -28,7 +28,7 @@ export const Modal = ({ isOpen, onClose, title, children }) => {
         max-w-none overrides any default framework constraints
         rounded-none ensures it sits flush against the absolute top and bottom edges
       */}
-      <div className="bg-white dark:bg-[#0F172A] w-[80vw] max-w-none h-screen max-h-screen flex flex-col overflow-hidden border-x border-gray-200 dark:border-gray-800 rounded-none shadow-2xl">
+      <div className="bg-white dark:bg-[#0F172A] w-full sm:w-[80vw] max-w-none h-screen max-h-screen flex flex-col overflow-hidden border-x border-gray-200 dark:border-gray-800 rounded-none shadow-2xl">
         
         {/* Fixed Header */}
         <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-gray-800 flex-none bg-white dark:bg-[#0F172A]">

@@ -101,9 +101,9 @@ export default function HomePage() {
           </Button>
         </div>
 
-        <div className="flex items-center justify-center gap-4">
-          <div className="w-40" /> {/* balances FilterBar width so search stays centered */}
-          <div className="relative max-w-md w-full">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+         <div className="hidden sm:block w-40" /> {/* balances FilterBar width so search stays centered */}
+         <div className="relative w-full sm:max-w-md">
             <Input
               placeholder="Search"
               value={searchQuery}

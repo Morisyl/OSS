@@ -10,7 +10,7 @@ export const StepComments = ({ data, updateData }) => (
       <label className="mb-3 block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">
         Payment Status
       </label>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {[{ label: 'Paid', value: true }, { label: 'Not Paid', value: false }].map(opt => (
           <label
             key={String(opt.value)}

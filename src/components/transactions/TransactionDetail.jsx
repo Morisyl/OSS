@@ -170,7 +170,7 @@ export const TransactionDetail = ({ transactionId, onClose, onListRefetch }) => 
           <h3 className="text-sm font-semibold text-black dark:text-white mb-4">Client details</h3>
           <div className="space-y-3">
             {transaction.transaction_clients?.map(tc => (
-              <div key={tc.clients.id} className="grid grid-cols-3 gap-4">
+              <div key={tc.clients.id} className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
                 <div className="px-4 py-3 bg-gray-200 dark:bg-gray-800 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300">
                   {tc.clients.id}
                 </div>
@@ -228,7 +228,7 @@ export const TransactionDetail = ({ transactionId, onClose, onListRefetch }) => 
         {additionalTasks.length > 0 && (
           <section>
             <h3 className="text-sm font-semibold text-black dark:text-white mb-4">Additional services</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
               {additionalTasks.map(task => {
                 const isDone = task.task_status === 'Done';
                 return (
@@ -272,7 +272,7 @@ export const TransactionDetail = ({ transactionId, onClose, onListRefetch }) => 
         {/* Read-Only Paid Toggle */}
         <section>
           <label className="mb-4 block text-lg font-medium text-black dark:text-white">Paid?</label>
-          <div className="grid grid-cols-2 gap-4 opacity-70 pointer-events-none">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 opacity-70 pointer-events-none">
             {[{ label: 'Yes', value: true }, { label: 'No', value: false }].map(opt => (
               <div
                 key={String(opt.value)}
