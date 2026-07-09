@@ -87,7 +87,7 @@ export const ExportModal = ({ isOpen, onClose }) => {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Export Transactions">
-      <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+      <div className="space-y-6 max-h-[65vh] overflow-y-auto p-4 sm:p-6 lg:p-8">
 
         <section>
           <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-2">Templates</h3>
@@ -112,7 +112,7 @@ export const ExportModal = ({ isOpen, onClose }) => {
               <button onClick={() => setSelectedKeys([])} className="text-gray-400">Clear</button>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {catalog.map(f => (
               <label key={f.key} className="flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={selectedKeys.includes(f.key)} onChange={() => toggleField(f.key)} />
@@ -129,13 +129,13 @@ export const ExportModal = ({ isOpen, onClose }) => {
               {selectedKeys.map(key => {
                 const field = catalog.find(f => f.key === key);
                 return (
-                  <div key={key} className="flex items-center gap-3">
-                    <span className="w-40 text-xs text-gray-400 shrink-0">{field?.label}</span>
+                  <div key={key} className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
+                    <span className="sm:w-40 text-xs text-gray-400 shrink-0">{field?.label}</span>
                     <input
                       list={`suggestions-${key}`}
                       value={labels[key] ?? field?.label ?? ''}
                       onChange={(e) => setLabels(prev => ({ ...prev, [key]: e.target.value }))}
-                      className="flex-1 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm"
+                      className="flex-1 min-w-0 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm"
                     />
                     <datalist id={`suggestions-${key}`}>
                       {(suggestions[key] || []).map(s => <option key={s} value={s} />)}
@@ -149,7 +149,7 @@ export const ExportModal = ({ isOpen, onClose }) => {
 
         <section>
           <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-2">Filters</h3>
-          <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
             <div>
               <label className="text-xs text-gray-400">From date</label>
               <input type="date" value={filters.dateFrom} onChange={(e) => setFilters(prev => ({ ...prev, dateFrom: e.target.value }))} className="w-full px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm" />
@@ -159,7 +159,7 @@ export const ExportModal = ({ isOpen, onClose }) => {
               <input type="date" value={filters.dateTo} onChange={(e) => setFilters(prev => ({ ...prev, dateTo: e.target.value }))} className="w-full px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {categoricalFields.map(f => (
               <div key={f.key}>
                 <label className="text-xs text-gray-400">{f.label}</label>
@@ -177,7 +177,7 @@ export const ExportModal = ({ isOpen, onClose }) => {
         </section>
       </div>
 
-      <div className="pt-4 flex justify-end gap-3 border-t border-gray-100 dark:border-gray-800 mt-4">
+      <div className="p-4 sm:p-6 flex flex-col sm:flex-row justify-end gap-3 border-t border-gray-100 dark:border-gray-800">
         <Button onClick={onClose} className="bg-gray-200 dark:bg-gray-800 text-black dark:text-white">Cancel</Button>
         <Button onClick={handleExport} disabled={isExporting || selectedKeys.length === 0}>
           {isExporting ? 'Exporting...' : 'Export CSV'}

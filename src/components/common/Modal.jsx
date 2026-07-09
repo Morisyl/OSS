@@ -28,10 +28,10 @@ export const Modal = ({ isOpen, onClose, title, children }) => {
         max-w-none overrides any default framework constraints
         rounded-none ensures it sits flush against the absolute top and bottom edges
       */}
-      <div className="bg-white dark:bg-[#0F172A] w-full sm:w-[80vw] max-w-none h-screen max-h-screen flex flex-col overflow-hidden border-x border-gray-200 dark:border-gray-800 rounded-none shadow-2xl">
+      <div className="bg-white dark:bg-[#0F172A] w-full sm:w-[80vw] max-w-none h-[100dvh] max-h-[100dvh] flex flex-col overflow-hidden border-x border-gray-200 dark:border-gray-800 rounded-none shadow-2xl">
         
         {/* Fixed Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-gray-800 flex-none bg-white dark:bg-[#0F172A]">
+        <div className="flex justify-between items-center p-6 pt-[max(1.5rem,env(safe-area-inset-top))] border-b border-gray-100 dark:border-gray-800 flex-none bg-white dark:bg-[#0F172A]">
           <h2 className="text-xl font-bold uppercase tracking-tight text-black dark:text-white">
             {title}
           </h2>
@@ -46,7 +46,7 @@ export const Modal = ({ isOpen, onClose, title, children }) => {
         </div>
 
         {/* Content Area - Passes height control entirely to the children */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-[#0F172A]">
+        <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-[#0F172A] pb-[env(safe-area-inset-bottom)]">
           {children}
         </div>
 

@@ -27,13 +27,12 @@ export const Input = forwardRef(({
         className={`
           px-6 py-3 bg-transparent
           rounded-full outline-none transition-all duration-200
-          border-2 border-blue-400/60 dark:border-blue-400/60
-         text-black dark:text-white placeholder-gray-600 dark:placeholder-gray-300
+          text-black dark:text-white placeholder-gray-600 dark:placeholder-gray-300
           font-bold text-center
-          focus:border-blue-400 focus:ring-0
+          focus:ring-0
           ${hasError 
             ? 'border-2 border-red-500 bg-red-50 dark:bg-red-900/20' 
-            : 'border border-transparent'
+            : 'border-2 border-black dark:border-blue-400/70 focus:border-blue-500 dark:focus:border-blue-400'
           }
         `}
         {...props}
